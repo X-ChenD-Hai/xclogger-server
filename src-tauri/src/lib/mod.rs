@@ -1,17 +1,87 @@
 pub mod db;
 pub mod loghandler;
-pub mod store;
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+use crate::db::*;
+use crate::loghandler::*;
+use tauri::{AppHandle, State};
 #[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
+async fn stop_server(handler: State<'_, LogHandler>) -> Result<String, String> {
+    handler.stop_server().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn start_server(app: AppHandle, handler: State<'_, LogHandler>) -> Result<String, String> {
+    handler.start_server(&app).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn get_messages(
+    app_handle: AppHandle,
+    handler: State<'_, LogHandler>,
+    limit: i32,
+    offset: i32,
+) -> Result<String, String> {
+    if !handler.db.is_connected() {
+        handler.connect_db(&app_handle)?;
+    }
+    handler.db.get_messages(limit, offset)
+}
+
+#[tauri::command]
+async fn get_message_count(app: AppHandle, handler: State<'_, LogHandler>) -> Result<i32, String> {
+    handler.connect_db(&app)?;
+    handler.db.get_message_count()
+}
+#[tauri::command]
+async fn config_set(
+    app: AppHandle,
+    handler: State<'_, LogHandler>,
+    key: String,
+    value: String,
+) -> Result<(), String> {
+    handler.connect_db(&app)?;
+    handler.db.set_config(key.as_str(), value.as_str())?;
+    Ok(())
+}
+#[tauri::command]
+async fn config_get(
+    app: AppHandle,
+    handler: State<'_, LogHandler>,
+    key: String,
+) -> Result<Option<String>, String> {
+    handler.connect_db(&app)?;
+    handler.db.get_config(key.as_str())
+}
+#[tauri::command]
+async fn get_server_address(handler: State<'_, LogHandler>) -> Result<String, String> {
+    handler.get_address()
+}
+#[tauri::command]
+async fn set_server_address(
+    handler: State<'_, LogHandler>,
+    address: String,
+) -> Result<String, String> {
+    handler.set_server_address(address)
+}
+#[tauri::command]
+async fn get_server_state(handler: State<'_, LogHandler>) -> Result<String, String> {
+    serde_json::to_string(&handler.get_server_state()?).map_err(|e| e.to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet])
+        .manage(LogHandler::new())
+        .invoke_handler(tauri::generate_handler![
+            start_server,
+            stop_server,
+            get_server_address,
+            set_server_address,
+            get_server_state,
+            get_messages,
+            get_message_count,
+            config_set,
+            config_get
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

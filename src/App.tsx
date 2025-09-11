@@ -1,50 +1,50 @@
-import { useState, useEffect, useRef } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
-import { TauriClient } from "./api/tauriClient";
-import "./App.css";
+import { useState, useMemo } from 'react';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import Box from '@mui/material/Box';
+import { useMediaQuery } from '@mui/material';
+type ThemeMode = 'light' | 'dark';
+import SettingsPanel from './components/SettingsPanel';
+import AppHeader from './components/AppHeader';
+import LogView from './components/LogView';
 
-function App() {
-  const [text, setText] = useState("");
-  const [messages, setMessages] = useState("");
-  const client = useRef<TauriClient>(null);
-  const unlisten = useRef<() => void>(null);
-  const start_inited = useRef(false);
+const App = () => {
+  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
 
-  useEffect(() => {
-    const init = async () => {
-      if (start_inited.current) {
-        return;
-      }
-      start_inited.current = true;
-      if (unlisten.current === null) {
-        unlisten.current = await listen("message-received", (event) => {
-          setText(event.payload as string);
-        });
-      }
-      if (client.current === null) {
-        client.current = new TauriClient();
-      }
-      start_inited.current = false;
-    }
-    init();
-  })
-  return (
-    <>
-      <h1>hello world</h1>
-      <p>{text}</p>
-      <button onClick={() => invoke("say_hello").then(data => setText(data as string))}
-      >get</button>
-      <button onClick={() => invoke("start_server").then(data => setText(data as string))}
-      >start server</button>
-      <button onClick={() => invoke("stop_server").then(data => setText(data as string))}
-      >stop server</button>
-      <button onClick={() => client.current?.get_messages(10, 0).then(data => setMessages(data))}>select message</button>
-      <p>{messages}</p>
-    </>
-
+  // 状态用于管理当前主题模式，并允许用户手动覆盖
+  const [mode, setMode] = useState<ThemeMode>(prefersDarkMode ? 'dark' : 'light');
+  const [show_settings, setShow_settings] = useState(false);
+  const [show_searchbar, setShowSearchbar] = useState(false);
+  const [title, setTitle] = useState('xclogger-server');
+  // 使用useMemo根据模式创建主题，优化性能
+  const theme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode: mode, // 'light' 或 'dark'
+          background: {
+            default: mode === 'light' ? '#f5f5f5' : '#0f1214',
+          }
+        },
+      }),
+    [mode] // 当mode改变时重新创建主题
   );
-}
+
+
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Box sx={{ height: '10vh' }}>
+        <AppHeader thamestate={[mode, setMode]}
+          show_search={[show_searchbar, setShowSearchbar]}
+          show_settings={[show_settings, value => { setShow_settings(value); setTitle(value ? '设置' : 'xclogger-server'); }]}
+          title={title} />
+      </Box>
+      <Box sx={{ height: '90vh', overflow: 'auto' }}>
+        {show_settings ? <SettingsPanel /> : <LogView />}
+      </Box>
+    </ThemeProvider>
+  );
+};
 
 export default App;

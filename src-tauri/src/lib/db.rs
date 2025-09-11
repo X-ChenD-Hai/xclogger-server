@@ -11,6 +11,10 @@ pub trait DB {
     fn insert_message(&self, message: &MessageData) -> Result<usize, String>;
     fn get_messages(&self, limit: i32, offset: i32) -> Result<String, String>;
     fn get_message_count(&self) -> Result<i32, String>;
+
+    fn get_config(&self, key: &str) -> Result<Option<String>, String>;
+    fn set_config(&self, key: &str, value: &str) -> Result<(), String>;
+    fn get_all_configs(&self) -> Result<Vec<(String, String)>, String>;
 }
 
 impl DB for Arc<Mutex<Option<Connection>>> {
@@ -40,6 +44,29 @@ impl DB for Arc<Mutex<Option<Connection>>> {
                     [],
                 )
                 .map_err(|e| format!("创建表失败: {}", e))?;
+            // 创建配置表
+            new_conn
+                .execute(
+                    "
+    CREATE TABLE IF NOT EXISTS
+    app_config (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        key TEXT NOT NULL UNIQUE,
+        value TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );",
+                    [],
+                )
+                .map_err(|e| format!("创建配置表失败: {}", e))?;
+
+            // 插入默认配置
+            new_conn
+                .execute(
+                    "INSERT OR IGNORE INTO app_config (key, value) VALUES ('version', '1.0.0')",
+                    [],
+                )
+                .map_err(|e| format!("插入默认配置失败: {}", e))?;
+
             *conn = Some(new_conn);
         }
         Ok(())
@@ -80,7 +107,7 @@ impl DB for Arc<Mutex<Option<Connection>>> {
     fn get_messages(&self, limit: i32, offset: i32) -> Result<String, String> {
         let conn_guard = self.lock().map_err(|e| e.to_string())?;
         let conn = conn_guard.as_ref().ok_or("数据库未连接".to_string())?;
-
+        println!("select with: lim:{}, off:{}", limit, offset);
         let mut stmt = conn
             .prepare(
                 "SELECT role, label, file, function, time, process_id, thread_id, line, level, messages 
@@ -110,7 +137,7 @@ impl DB for Arc<Mutex<Option<Connection>>> {
         // 收集结果并处理错误
         let messages: Result<Vec<_>, _> = messages_iter.collect();
         let messages = messages.map_err(|e| e.to_string())?;
-
+        println!("success to get message {:?}", messages);
         // 序列化为 JSON 返回给前端
         serde_json::to_string(&messages).map_err(|e| e.to_string())
     }
@@ -128,5 +155,53 @@ impl DB for Arc<Mutex<Option<Connection>>> {
             .map_err(|e| e.to_string())?;
 
         Ok(count)
+    }
+
+    fn get_config(&self, key: &str) -> Result<Option<String>, String> {
+        let conn_guard = self.lock().map_err(|e| e.to_string())?;
+        let conn = conn_guard.as_ref().ok_or("数据库未连接".to_string())?;
+
+        let mut stmt = conn
+            .prepare("SELECT value FROM app_config WHERE key = ?1")
+            .map_err(|e| format!("准备查询语句失败: {}", e))?;
+
+        let result: Result<String, _> = stmt.query_row(params![key], |row| row.get(0));
+
+        match result {
+            Ok(value) => Ok(Some(value)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(format!("查询配置失败: {}", e)),
+        }
+    }
+
+    fn set_config(&self, key: &str, value: &str) -> Result<(), String> {
+        let conn_guard = self.lock().map_err(|e| e.to_string())?;
+        let conn = conn_guard.as_ref().ok_or("数据库未连接".to_string())?;
+
+        conn.execute(
+            "INSERT OR REPLACE INTO app_config (key, value) VALUES (?1, ?2)",
+            params![key, value],
+        )
+        .map_err(|e| format!("设置配置失败: {}", e))?;
+
+        Ok(())
+    }
+
+    fn get_all_configs(&self) -> Result<Vec<(String, String)>, String> {
+        let conn_guard = self.lock().map_err(|e| e.to_string())?;
+        let conn = conn_guard.as_ref().ok_or("数据库未连接".to_string())?;
+
+        let mut stmt = conn
+            .prepare("SELECT key, value FROM app_config ORDER BY key")
+            .map_err(|e| format!("准备查询语句失败: {}", e))?;
+
+        let config_iter = stmt
+            .query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            })
+            .map_err(|e| format!("查询配置失败: {}", e))?;
+
+        let configs: Result<Vec<_>, _> = config_iter.collect();
+        configs.map_err(|e| format!("收集配置结果失败: {}", e))
     }
 }
