@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Box, Chip, Grid, Link, Tooltip, Typography } from '@mui/material';
+import { Box, Chip, Link, Tooltip, Typography } from '@mui/material';
 import { Message } from '../api/client';
 import { FormateMessage } from '../api/rules';
 import client from '../api/tauriClient';

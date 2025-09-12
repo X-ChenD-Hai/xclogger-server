@@ -32,6 +32,7 @@ const SettingsPanel = (props: SettingsProps & ProjectsPanelProps & LevelPanelPro
     }
 
     const checkPanel = () => {
+
         switch (act_item) {
             case 'project':
                 return <ProjectsPanel project_location={props.project_location} />
