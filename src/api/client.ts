@@ -9,10 +9,9 @@ export interface Message {
     thread_id: number; // 线程ID
     line?: number | null; // 行号，可选
     level: number; // 日志级别
-    messages: string; // 合并后的消息内容
+    messages: Array<Array<string>>; // 合并后的消息内容
     created_at?: string; // 记录插入时间 (ISO 字符串格式，如 "2024-01-01T12:00:00Z")
 }
-
 
 export interface IClient {
     set(key: string, value: string): void;
@@ -22,5 +21,4 @@ export interface IClient {
     onRecviveMesage(callback: (msg: Message) => void): void;
     start_server(addr: string): void;
     stop_server(): void;
-
 }

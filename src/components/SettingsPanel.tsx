@@ -5,17 +5,21 @@ import ContrastIcon from '@mui/icons-material/Contrast';
 import { FaCriticalRole } from "react-icons/fa";
 import { MdLabelImportant } from "react-icons/md";
 import ClearAllIcon from '@mui/icons-material/ClearAll';
+import LevelPanel, { LevelPanelProps } from './settings/LevelPanel';
+import ProjectsPanel, { ProjectsPanelProps } from './settings/ProjectsPanel';
 interface SettingsProps { }
 
-const SettingsPanel = (_: SettingsProps) => {
-    type ItemKey = 'role' | 'theme' | 'level' | 'label';
+
+
+const SettingsPanel = (props: SettingsProps & ProjectsPanelProps & LevelPanelProps) => {
+    type ItemKey = 'role' | 'project' | 'level' | 'label';
     interface SettingItem {
         name: string;
         key: ItemKey;
         icon: React.ReactNode;
     }
     const setting_items: SettingItem[] = [
-        { name: '主题', key: 'theme', icon: <ContrastIcon /> },
+        { name: '项目', key: 'project', icon: <ContrastIcon /> },
         { name: '角色', key: 'role', icon: <FaCriticalRole /> },
         { name: '日志等级', key: 'level', icon: <ClearAllIcon /> },
         { name: '标签', key: 'label', icon: <MdLabelImportant /> },
@@ -27,7 +31,20 @@ const SettingsPanel = (_: SettingsProps) => {
         setAct_item(key);
     }
 
-
+    const checkPanel = () => {
+        switch (act_item) {
+            case 'project':
+                return <ProjectsPanel project_location={props.project_location} />
+            case 'role':
+                return <div>角色设置</div>
+            case 'level':
+                return <LevelPanel level_rule_sets={props.level_rule_sets} />
+            case 'label':
+                return <div>标签设置</div>
+            default:
+                return <div>默认设置</div>
+        }
+    }
     return (
         <Box sx={{ width: '100%', height: '100%' }}>
             <Grid container spacing={2}>
@@ -47,9 +64,10 @@ const SettingsPanel = (_: SettingsProps) => {
                     </Box>
                 </Grid>
                 <Grid size={9}>
-
+                    {checkPanel()}
                 </Grid>
             </Grid>
+
         </Box>
     )
 }

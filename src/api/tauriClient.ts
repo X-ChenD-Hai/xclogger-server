@@ -205,9 +205,9 @@ export class TauriClient implements IClient {
      */
     async get_messages(limit: number, offset: number): Promise<Message[]> {
         try {
-            const res = await invoke<Message[]>(TauriCommands.GetMessages, { limit, offset } as GetMessagesRequest);
+            const res = await invoke<string>(TauriCommands.GetMessages, { limit, offset } as GetMessagesRequest);
             console.log("get_messages result:", res);
-            return res;
+            return JSON.parse(res) as Message[];
         } catch (error) {
             console.error("Error invoking 'get_messages':", error);
             throw error; // 重新抛出错误以便调用者处理
@@ -221,8 +221,8 @@ export class TauriClient implements IClient {
      */
     async set(key: string, value: string) {
         try {
+            console.log("set key:", key, "value:", value);
             const res = await invoke<any>(TauriCommands.ConfigSet, { key, value });
-            console.log("set result:", res);
             return res;
         } catch (error) {
             console.error("Error invoking 'set':", error);
@@ -238,7 +238,6 @@ export class TauriClient implements IClient {
     async get(key: string): Promise<string | null> {
         try {
             const res = await invoke<string | null>(TauriCommands.ConfigGet, { key });
-            console.log("get result:", res);
             return res;
         } catch (error) {
             console.error("Error invoking 'get':", error);

@@ -27,11 +27,11 @@ const AppHeader = (pros: AppProps) => {
         <Box sx={{
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'flex-start',
+            alignItems: 'center',
             p: 1,
             bgcolor: 'ba'
         }}>
-            {pros.title ? <Typography variant="h6" component="h1" sx={{ mr: 2 }}>{pros.title}</Typography> : null}
+            {pros.title ? <Typography variant="h6" component="h1" sx={{ ml:2, mr: 2 }}>{pros.title}</Typography> : null}
             <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'row-reverse' }}>
                 <Tooltip title="设置">
                     <IconButton onClick={() => setAct_settings(!act_settings)}

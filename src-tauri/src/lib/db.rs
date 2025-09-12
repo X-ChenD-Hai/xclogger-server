@@ -129,7 +129,7 @@ impl DB for Arc<Mutex<Option<Connection>>> {
                     thread_id: row.get::<_, i64>(6)? as usize,
                     line: row.get(7)?,
                     level: row.get(8)?,
-                    messages: vec![row.get::<_, String>(9)?], // 将字符串拆分为向量？
+                    messages: serde_json::from_str(row.get::<_, String>(9)?.as_str()).unwrap(),
                 })
             })
             .map_err(|e| e.to_string())?;
