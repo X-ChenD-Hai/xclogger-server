@@ -87,6 +87,7 @@ mod test {
                 mode: PatternMode::Start,
                 value: "data1".to_string(),
             }),
+            role: None,
             file: None,
             function: None,
             level: None,
