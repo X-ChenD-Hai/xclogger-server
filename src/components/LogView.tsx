@@ -1,84 +1,10 @@
-
-import { useState, useEffect } from 'react';
-import { Box, Chip, Link, Tooltip, Typography } from '@mui/material';
+import { useState, useEffect, useCallback } from 'react';
+import { Box, Typography } from '@mui/material';
 import { Message } from '../api/client';
 import { FormateMessage, LabelRuleSet, RoleRuleSet } from '../api/rules';
 import client from '../api/tauriClient';
-import { LevelRuleSet, ChipStyle } from '../api/rules';
-import React from 'react';
-interface MessageCardProps {
-    message: FormateMessage;
-    project_location?: string,
-    level_rules_sets: LevelRuleSet[],
-    role_rules_sets: RoleRuleSet[]
-    label_rules_sets: LabelRuleSet[]
-}
-const StyleChip = React.memo((props: { label: string, style: ChipStyle }) => {
-    return <Chip
-        variant={props.style.style === 'outline' ? 'outlined' : 'filled'}
-        label={props.style.text || props.label}
-        sx={{
-            bgcolor: props.style.style === 'fill' ? props.style.color : 'transparent',
-            color: props.style.style === 'outline' ? props.style.color : '#fff',
-            borderColor: props.style.color,
-            mr: 1,
-            minWidth: 40,
-        }}
-    />
-})
-const MessageCard: React.FC<MessageCardProps> = React.memo(({
-    message,
-    project_location,
-    level_rules_sets,
-    role_rules_sets,
-    label_rules_sets,
-}) => {
-    const msg = message;
-    const get_relative_path = (file: string) => {
-        if (!project_location) {
-            return file;
-        }
-        if (file.startsWith(project_location)) {
-            return file.slice(project_location.length);
-        }
-        return file;
-    }
-    return (
-        <Box sx={{ pl: 3, pt: 1 }}>
-            <Box display='flex' sx={{ justifyContent: 'space-between', bgcolor: 'background.paper', borderRadius: 1, mb: 1 }}>
-                <Box display={'flex'} alignItems={'center'}>
-                    <StyleChip label={msg.msg.role} style={msg.roleStyle(role_rules_sets)} />
-                    <StyleChip label={msg.msg.label} style={msg.labelStyle(label_rules_sets)} />
-                </Box>
-                <Box display={'flex'} flexDirection={'row'} justifyContent={'space-between'} alignItems={'end'}>
-                    <Box display={'flex'} flexDirection={'column'}>
-                        <Typography color='text.secondary' variant="body2" sx={{ mr: 2 }}>id: {msg.msg.id}</Typography>
-                        <Typography color='text.secondary' variant="body2" sx={{ mr: 2 }}>{msg.time}</Typography>
-                    </Box>
-                    <Box display={'flex'} flexDirection={'column'}>
-                        {msg.msg.file &&
-                            <Link color='text.secondary' underline='hover' href={message.msg ? `vscode://file/${msg.msg.file}:${msg.msg.line}` : ''}>
-                                {get_relative_path(msg.msg.file) + ((msg.msg.line !== undefined) ? `:${msg.msg.line}` : '')}
-                            </Link>}
-                        {msg.msg.function &&
-                            <Typography color='text.secondary' variant="body2" sx={{ mr: 1 }}>{msg.msg.function}</Typography>}
-                    </Box>
-                </Box>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                <Typography variant="h6" sx={{ ml: 1 }}>{msg.msg.id}</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', mb: 1 }}>
-                <Tooltip title={msg.msg.level.toString()} placement='top'>
-                    <StyleChip label={msg.msg.level.toString()} style={msg.levelStyle(level_rules_sets)} />
-                </Tooltip>
-                {msg.msg.messages.map((msg, index) => (
-                    <Typography key={index} variant="body2" display='inline-block'>{msg}</Typography>
-                ))}
-            </Box>
-        </Box>
-    )
-})
+import { LevelRuleSet } from '../api/rules';
+import MessageCard from './MessageCard';
 
 interface LogViewProps {
     project_location?: string
@@ -89,20 +15,92 @@ interface LogViewProps {
 
 const LogView = (props: LogViewProps) => {
     const [messages, setMessages] = useState<Message[]>([]);
+    const [currentPage, setCurrentPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [observer, setObserver] = useState<IntersectionObserver | null>(null);
+    const pageSize = 20; // 每页加载数量
+
+    // 加载更多消息的函数
+    const loadMoreMessages = useCallback(async () => {
+        if (loading || !hasMore) return;
+
+        setLoading(true);
+        try {
+            const offset = currentPage * pageSize;
+            const newMessages = await client.get_messages(pageSize, offset);
+
+            if (newMessages.length < pageSize) {
+                setHasMore(false);
+            }
+
+            setMessages(prev => [...prev, ...newMessages]);
+            setCurrentPage(prev => prev + 1);
+        } catch (error) {
+            console.error('加载更多消息失败:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, [currentPage, hasMore, loading, pageSize]);
+
+    // 初始加载和设置观察器
     useEffect(() => {
-        // 定义一个异步函数获取数据
-        const fetchMessages = async () => {
+        // 初始加载第一页
+        const fetchInitialMessages = async () => {
             try {
-                const res = await client.get_messages(100, 0);
-                setMessages(res); // 假设 res 就是 Message[] 类型
+                setLoading(true);
+                const initialMessages = await client.get_messages(pageSize, 0);
+                setMessages(initialMessages);
+                setCurrentPage(1);
+                setHasMore(initialMessages.length === pageSize);
             } catch (error) {
-                console.error('获取消息失败:', error);
-                // 可以在这里处理错误，例如设置一个错误状态
+                console.error('获取初始消息失败:', error);
+            } finally {
+                setLoading(false);
             }
         };
 
-        fetchMessages();
+        fetchInitialMessages();
     }, []); // 空依赖数组确保只在组件挂载时执行一次
+
+    // 使用 useCallback 包装 loadMoreMessages 以避免重复创建
+    const handleLoadMore = useCallback(() => {
+        if (hasMore && !loading) {
+            loadMoreMessages();
+        }
+    }, [hasMore, loading, loadMoreMessages]);
+
+    // 设置 Intersection Observer 来检测滚动到底部
+    useEffect(() => {
+        const options = {
+            root: null,
+            rootMargin: '20px',
+            threshold: 0.1,
+        };
+
+        const obs = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                handleLoadMore();
+            }
+        }, options);
+
+        setObserver(obs);
+
+        return () => {
+            obs.disconnect();
+        };
+    }, [handleLoadMore]);
+
+    // 设置观察目标
+    const bottomRef = useCallback((node: HTMLDivElement | null) => {
+        if (observer) {
+            observer.disconnect();
+            if (node) {
+                observer.observe(node);
+            }
+        }
+    }, [observer]);
+
     return (
         <Box >
             {messages.map((message) => (
@@ -116,6 +114,26 @@ const LogView = (props: LogViewProps) => {
                 />
             ))}
 
+            {/* 底部观察元素 */}
+            <div ref={bottomRef} style={{ height: '20px', display: hasMore ? 'block' : 'none' }} />
+
+            {/* 加载状态显示 */}
+            {loading && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', padding: 2 }}>
+                    <Typography variant="body2" color="text.secondary">
+                        加载中...
+                    </Typography>
+                </Box>
+            )}
+
+            {/* 没有更多数据的提示 */}
+            {!hasMore && messages.length > 0 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', padding: 2 }}>
+                    <Typography variant="body2" color="text.secondary">
+                        没有更多消息了
+                    </Typography>
+                </Box>
+            )}
         </Box>
     )
 }
