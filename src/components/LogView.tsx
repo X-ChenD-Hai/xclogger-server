@@ -4,11 +4,11 @@ import { Box, Chip, Link, Tooltip, Typography } from '@mui/material';
 import { Message } from '../api/client';
 import { FormateMessage } from '../api/rules';
 import client from '../api/tauriClient';
-import { LevelRuleSet, LevelChipStyle } from '../api/rules';
+import { LevelRuleSet, ChipStyle } from '../api/rules';
 interface MessageCardProps {
     message: FormateMessage;
     project_location?: string,
-    level_style: LevelChipStyle
+    level_style: ChipStyle
 }
 
 const MessageCard: React.FC<MessageCardProps> = ({

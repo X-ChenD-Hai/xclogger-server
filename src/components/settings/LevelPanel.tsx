@@ -1,7 +1,7 @@
-import { Box, Chip, Grid, IconButton, InputAdornment, Switch, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
-import { LevelChipStyle, LevelRule, LevelRuleSet } from "../../api/rules"
+import { Box, Chip, Grid, InputAdornment, Switch, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import { ChipStyle, LevelRule, LevelRuleSet } from "../../api/rules"
 import Panel from "./Panel";
-import ColorEditor from "../ColorEditor";
+import ColorEditor from "../public/ColorEditor";
 import React from "react";
 import TextEidtDelay from "../public/TextEidtDelay";
 type state<T> = [T, (newState: T) => void]
@@ -20,8 +20,8 @@ const LevelRuleItem = React.memo((props: {
     const update_rule = (rule: LevelRule) => {
         props.onRuleChange(props.set_index, props.index, rule)
     }
-    const update_style = (style: LevelChipStyle) => {
-        update_rule({ ...props.rule, style })
+    const update_style = (style: ChipStyle) => {
+        update_rule(new LevelRule(props.rule.level, style))
     }
     return <>
         <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
@@ -32,7 +32,7 @@ const LevelRuleItem = React.memo((props: {
                     type='number'
                     size='small'
                     fullWidth
-                    onBlur={() => props.onRuleChange(props.set_index, props.index, { ...props.rule, level })}
+                    onBlur={() => props.onRuleChange(props.set_index, props.index, new LevelRule(level, { ...props.rule.style, text }))}
                     slotProps={level === null ? {
                         input: {
                             startAdornment: <InputAdornment position="start">  all</InputAdornment>,
@@ -127,14 +127,7 @@ const LevelPanel = (props: LevelPanelProps) => {
         }}
         onInsertItem={(setIndex, index) => {
             const new_rule_sets = [...props.level_rule_sets[0]];
-            const newRule: LevelRule = {
-                level: null,
-                style: {
-                    color: '#000000',
-                    style: 'fill',
-                    text: null
-                },
-            };
+            const newRule = new LevelRule(null, { color: '#000000', style: 'fill', text: null });
             new_rule_sets[setIndex].rules.splice(index + 1, 0, newRule);
             props.level_rule_sets[1](new_rule_sets);
         }}

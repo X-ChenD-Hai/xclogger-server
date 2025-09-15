@@ -3,21 +3,34 @@ import { Message } from './client';
 export type RuleAction = 'equal' | 'notEqual' | 'contains' | 'notContains' | 'regex';
 export type RuleTarget = 'role' | 'label' | 'level';
 export type LevelChipStyleStyle = 'outline' | 'fill';
-export interface LevelChipStyle {
+export interface ChipStyle {
     color: string;
     style: LevelChipStyleStyle;
     text: string | null;
 }
-export interface LevelRule {
-    level: number | null;
-    style: LevelChipStyle;
+
+export interface Rule {
+    is_patterned: (dst: any) => boolean;
+    style: ChipStyle;
 }
-export interface LevelRuleSet {
-    name: string;
-    rules: LevelRule[];
-    disabled: boolean;
+export class LevelRule implements Rule {
+    level: number | null;
+    style: ChipStyle;
+    constructor(level: number | null, style: ChipStyle) {
+        this.level = level;
+        this.style = style;
+    }
+    is_patterned(dst: number): boolean {
+        return this.level === dst;
+    }
 }
 
+export interface RuleSet<T extends Rule> {
+    name: string;
+    rules: T[];
+    disabled: boolean;
+}
+export type LevelRuleSet = RuleSet<LevelRule>;
 export class FormateMessage {
     readonly msg: Message;
     constructor(msg: Message) {
