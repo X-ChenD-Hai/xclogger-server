@@ -39,6 +39,8 @@ export enum TauriCommands {
     GetServerAddress = "get_server_address",
     SetServerAddress = "set_server_address",
     GetMessageCount = "get_message_count",
+    FilterMessages = "filter_messages",
+    FilterMessagesCount = "filter_messages_count",
     ConfigSet = "config_set",
     ConfigGet = "config_get",
 }
@@ -265,7 +267,7 @@ export class TauriClient implements IClient {
         offset: number
     ): Promise<Message[]> {
         try {
-            const res = await invoke<string>("filter_messages", {
+            const res = await invoke<string>(TauriCommands.FilterMessages, {
                 config,
                 orderBy: order,
                 limit,
@@ -280,7 +282,7 @@ export class TauriClient implements IClient {
 
     async filter_messages_count(config: FilterConfig): Promise<number> {
         try {
-            return await invoke<number>("filter_messages_count", { config });
+            return await invoke<number>(TauriCommands.FilterMessagesCount, { config });
         } catch (error) {
             console.error("Error invoking 'filter_messages_count':", error);
             throw error;

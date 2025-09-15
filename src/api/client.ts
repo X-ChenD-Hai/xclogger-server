@@ -41,6 +41,7 @@ export interface NumberRange {
 }
 export interface FilterConfig {
     label?: StringPattern;
+    role?: StringPattern;
     file?: StringPattern;
     function?: StringPattern;
     level?: NumberRange;

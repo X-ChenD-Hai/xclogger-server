@@ -39,6 +39,7 @@ pub struct NumberRange {
 #[derive(Deserialize, Debug)]
 pub struct FilterConfig {
     pub label: Option<StringPattern>,
+    pub role: Option<StringPattern>,
     pub file: Option<StringPattern>,
     pub function: Option<StringPattern>,
     pub level: Option<NumberRange>,
@@ -130,6 +131,12 @@ fn get_params(config: &FilterConfig) -> (String, Vec<Box<dyn rusqlite::ToSql>>) 
     // 构建过滤条件
     if let Some(label_pattern) = config.label.as_ref() {
         let (condition, param) = build_string_condition("label", label_pattern);
+        conditions.push(condition);
+        params.push(param);
+    }
+
+    if let Some(role_pattern) = config.role.as_ref() {
+        let (condition, param) = build_string_condition("role", role_pattern);
         conditions.push(condition);
         params.push(param);
     }
