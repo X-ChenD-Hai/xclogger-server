@@ -29,7 +29,7 @@ export class RoleRule implements Rule {
     pattern: string;
     mode: RuleAction = 'equal';
     style: ChipStyle;
-    constructor(role: string,mode: RuleAction, style: ChipStyle) {
+    constructor(role: string, mode: RuleAction, style: ChipStyle) {
         this.pattern = role;
         this.style = style;
         this.mode = mode;
@@ -44,9 +44,9 @@ export class RoleRule implements Rule {
                 return dst.includes(this.pattern);
             case 'notContains':
                 return !dst.includes(this.pattern);
-            case'regex':
+            case 'regex':
                 return new RegExp(this.pattern).test(dst);
-            case'startsWith':
+            case 'startsWith':
                 return dst.startsWith(this.pattern);
             case 'endsWith':
                 return dst.endsWith(this.pattern);
@@ -66,6 +66,93 @@ export type LevelRuleSet = RuleSet<LevelRule>;
 export type RoleRuleSet = RuleSet<RoleRule>;
 export type LabelRuleSet = RuleSet<LabelRule>;
 
+export function dumpLevelRuleSetList(ruleSetList: LevelRuleSet[]): string {
+    const result: any[] = [];
+    ruleSetList.forEach(ruleSet => {
+        const rules: any[] = [];
+        ruleSet.rules.forEach(rule => {
+            rules.push({
+                level: rule.level,
+                color: rule.style.color,
+                style: rule.style.style,
+                text: rule.style.text
+            });
+        });
+        result.push({
+            name: ruleSet.name,
+            rules: rules,
+            disabled: ruleSet.disabled
+        });
+    });
+    return JSON.stringify(result);
+}
+export function dumpRoleLabelRuleSetList(ruleSetList: RoleRuleSet[]): string {
+    const result: any[] = [];
+    ruleSetList.forEach(ruleSet => {
+        const rules: any[] = [];
+        ruleSet.rules.forEach(rule => {
+            rules.push({
+                pattern: rule.pattern,
+                mode: rule.mode,
+                color: rule.style.color,
+                style: rule.style.style,
+                text: rule.style.text
+            });
+        });
+        result.push({
+            name: ruleSet.name,
+            rules: rules,
+            disabled: ruleSet.disabled
+        });
+    });
+    return JSON.stringify(result);
+}
+
+export function parserLevelRoleSetList(data: string): LevelRuleSet[] {
+    const result: LevelRuleSet[] = [];
+    const obj = JSON.parse(data);
+    obj.forEach((item: any) => {
+        const rules: LevelRule[] = [];
+        item.rules.forEach((rule: any) => {
+            const style: ChipStyle = {
+                color: rule.color,
+                style: rule.style,
+                text: rule.text
+            };
+            rules.push(new LevelRule(rule.level, style));
+        });
+        result.push({
+            name: item.name,
+            rules: rules,
+            disabled: item.disabled
+        });
+    });
+    return result;
+}
+export function parserRoleLabelSetList(data: string): RoleRuleSet[] {
+    const result: RoleRuleSet[] = [];
+    const obj = JSON.parse(data);
+    obj.forEach((item: any) => {
+        const rules: RoleRule[] = [];
+        item.rules.forEach((rule: any) => {
+            const style: ChipStyle = {
+                color: rule.color,
+                style: rule.style,
+                text: rule.text
+            };
+            rules.push(new RoleRule(rule.pattern, rule.mode, style));
+        });
+        result.push({
+            name: item.name,
+            rules: rules,
+            disabled: item.disabled
+        });
+    });
+    return result;
+}
+export function parserLabelRoleSetList(data: string): LabelRuleSet[] {
+    return parserRoleLabelSetList(data);
+}
 
 export class FormateMessage {
     readonly msg: Message;
@@ -75,7 +162,7 @@ export class FormateMessage {
     get time(): string {
         return new Date(this.msg.time / 1000).toLocaleString();
     }
-    levelStyle(rules: LevelRuleSet[]) {
+    levelStyle(rules: LevelRuleSet[]): ChipStyle {
         const rule = rules.find(rule => !rule.disabled)?.rules;
         if (!rule) {
             return { color: 'gray', style: 'outline', text: null };

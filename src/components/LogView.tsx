@@ -5,16 +5,33 @@ import { Message } from '../api/client';
 import { FormateMessage, LabelRuleSet, RoleRuleSet } from '../api/rules';
 import client from '../api/tauriClient';
 import { LevelRuleSet, ChipStyle } from '../api/rules';
+import React from 'react';
 interface MessageCardProps {
     message: FormateMessage;
     project_location?: string,
-    level_style: ChipStyle
+    level_rules_sets: LevelRuleSet[],
+    role_rules_sets: RoleRuleSet[]
+    label_rules_sets: LabelRuleSet[]
 }
-
-const MessageCard: React.FC<MessageCardProps> = ({
+const StyleChip = React.memo((props: { label: string, style: ChipStyle }) => {
+    return <Chip
+        variant={props.style.style === 'outline' ? 'outlined' : 'filled'}
+        label={props.style.text || props.label}
+        sx={{
+            bgcolor: props.style.style === 'fill' ? props.style.color : 'transparent',
+            color: props.style.style === 'outline' ? props.style.color : '#fff',
+            borderColor: props.style.color,
+            mr: 1,
+            minWidth: 40,
+        }}
+    />
+})
+const MessageCard: React.FC<MessageCardProps> = React.memo(({
     message,
     project_location,
-    level_style
+    level_rules_sets,
+    role_rules_sets,
+    label_rules_sets,
 }) => {
     const msg = message;
     const get_relative_path = (file: string) => {
@@ -30,8 +47,8 @@ const MessageCard: React.FC<MessageCardProps> = ({
         <Box sx={{ pl: 3, pt: 1 }}>
             <Box display='flex' sx={{ justifyContent: 'space-between', bgcolor: 'background.paper', borderRadius: 1, mb: 1 }}>
                 <Box display={'flex'} alignItems={'center'}>
-                    <Chip label={msg.msg.role} variant='outlined' />
-                    <Chip label={msg.msg.label} variant='outlined' />
+                    <StyleChip label={msg.msg.role} style={msg.roleStyle(role_rules_sets)} />
+                    <StyleChip label={msg.msg.label} style={msg.labelStyle(label_rules_sets)} />
                 </Box>
                 <Box display={'flex'} flexDirection={'row'} justifyContent={'space-between'} alignItems={'end'}>
                     <Box display={'flex'} flexDirection={'column'}>
@@ -52,37 +69,22 @@ const MessageCard: React.FC<MessageCardProps> = ({
                 <Typography variant="h6" sx={{ ml: 1 }}>{msg.msg.id}</Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', mb: 1 }}>
-                {/* <Grid size={1.2} display={'flex'} justifyContent={'center'}> */}
-                {/* <Chip size='small' label={msg.msg.level} variant='outlined' /> */}
                 <Tooltip title={msg.msg.level.toString()} placement='top'>
-                    <Chip
-                        variant={level_style.style === 'outline' ? 'outlined' : 'filled'}
-                        label={level_style.text || ((msg.msg.level !== null) ? msg.msg.level.toString() : 'all')}
-                        sx={{
-                            bgcolor: level_style.style === 'fill' ? level_style.color : 'transparent',
-                            color: level_style.style === 'outline' ? level_style.color : '#fff',
-                            borderColor: level_style.color,
-                            mr: 1,
-                            minWidth: 40,
-                        }}
-                    />
+                    <StyleChip label={msg.msg.level.toString()} style={msg.levelStyle(level_rules_sets)} />
                 </Tooltip>
-                {/* </Grid> */}
-                {/* <Grid size={10}> */}
                 {msg.msg.messages.map((msg, index) => (
                     <Typography key={index} variant="body2" display='inline-block'>{msg}</Typography>
                 ))}
-                {/* </Grid> */}
             </Box>
         </Box>
     )
-}
+})
 
 interface LogViewProps {
     project_location?: string
     level_rules_sets: LevelRuleSet[]
-    role_rule_sets: RoleRuleSet[]
-    label_rule_sets: LabelRuleSet[]
+    role_rules_sets: RoleRuleSet[]
+    label_rules_sets: LabelRuleSet[]
 }
 
 const LogView = (props: LogViewProps) => {
@@ -101,11 +103,17 @@ const LogView = (props: LogViewProps) => {
 
         fetchMessages();
     }, []); // 空依赖数组确保只在组件挂载时执行一次
-    const ruleset = props.level_rules_sets.find((ruleset) => ruleset.disabled === false);
     return (
         <Box >
-            {messages.map((message, index) => (
-                <MessageCard level_style={ruleset?.rules.find((rule) => rule.level === message.level)?.style || { style: 'outline', color: '#fff', text: null }} project_location={props.project_location} key={index} message={new FormateMessage(message)} />
+            {messages.map((message) => (
+                <MessageCard
+                    level_rules_sets={props.level_rules_sets}
+                    project_location={props.project_location}
+                    role_rules_sets={props.role_rules_sets}
+                    label_rules_sets={props.label_rules_sets}
+                    key={message.id}
+                    message={new FormateMessage(message)}
+                />
             ))}
 
         </Box>

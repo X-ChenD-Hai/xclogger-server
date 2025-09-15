@@ -1,10 +1,24 @@
 use msg_server::MessageData;
 use rusqlite::{params, Connection};
+use serde::Serialize;
 use std::{
     path::PathBuf,
     sync::{Arc, Mutex},
 };
-
+#[derive(Serialize, Debug)]
+struct DBMessage {
+    pub id: u64,
+    pub role: String,
+    pub label: String,
+    pub file: String,
+    pub function: String,
+    pub time: usize,
+    pub process_id: usize,
+    pub thread_id: usize,
+    pub line: i32,
+    pub level: i32,
+    pub messages: Vec<String>,
+}
 pub trait DB {
     fn connect(&self, path: &PathBuf) -> Result<(), String>;
     fn is_connected(&self) -> bool;
@@ -110,7 +124,7 @@ impl DB for Arc<Mutex<Option<Connection>>> {
         println!("select with: lim:{}, off:{}", limit, offset);
         let mut stmt = conn
             .prepare(
-                "SELECT role, label, file, function, time, process_id, thread_id, line, level, messages 
+                "SELECT id, role, label, file, function, time, process_id, thread_id, line, level, messages 
                  FROM log_messages 
                  ORDER BY id DESC 
                  LIMIT ?1 OFFSET ?2",
@@ -119,17 +133,18 @@ impl DB for Arc<Mutex<Option<Connection>>> {
 
         let messages_iter = stmt
             .query_map(params![limit, offset], |row| {
-                Ok(MessageData {
-                    role: row.get(0)?,
-                    label: row.get(1)?,
-                    file: row.get(2)?,
-                    function: row.get(3)?,
-                    time: row.get::<_, i64>(4)? as usize, // i64 转 usize
-                    process_id: row.get::<_, i64>(5)? as usize,
-                    thread_id: row.get::<_, i64>(6)? as usize,
-                    line: row.get(7)?,
-                    level: row.get(8)?,
-                    messages: serde_json::from_str(row.get::<_, String>(9)?.as_str()).unwrap(),
+                Ok(DBMessage {
+                    id: row.get(0)?,
+                    role: row.get(1)?,
+                    label: row.get(2)?,
+                    file: row.get(3)?,
+                    function: row.get(4)?,
+                    time: row.get::<_, i64>(5)? as usize, // i64 转 usize
+                    process_id: row.get::<_, i64>(6)? as usize,
+                    thread_id: row.get::<_, i64>(7)? as usize,
+                    line: row.get(8)?,
+                    level: row.get(9)?,
+                    messages: serde_json::from_str(row.get::<_, String>(10)?.as_str()).unwrap(),
                 })
             })
             .map_err(|e| e.to_string())?;

@@ -8,7 +8,15 @@ import AppHeader from './components/AppHeader';
 // import ApiDebugView from './components/ApiDebugView';
 import LogView from './components/LogView';
 import client from './api/tauriClient';
-import { LevelRuleSet, RoleRuleSet, LabelRuleSet } from './api/rules';
+import { LevelRuleSet, 
+  RoleRuleSet, 
+  LabelRuleSet,
+  parserLabelRoleSetList,
+  parserLevelRoleSetList,
+  parserRoleLabelSetList,
+  dumpRoleLabelRuleSetList,
+  dumpLevelRuleSetList
+} from './api/rules';
 
 type ThemeMode = 'light' | 'dark';
 const App = () => {
@@ -52,15 +60,9 @@ const App = () => {
         if (theme) setMode(theme as ThemeMode);
         if (projection_path) setProjection_path(projection_path);
 
-        // 添加JSON解析保护
-        const safeParse = (str: string) => {
-          try { return JSON.parse(str) }
-          catch { return [] }
-        };
-
-        if (level_rule_sets) setLevel_rules(safeParse(level_rule_sets));
-        if (role_rule_sets) setRole_rules(safeParse(role_rule_sets));
-        if (label_rule_sets) setLabel_rules(safeParse(label_rule_sets));
+        if (level_rule_sets) setLevel_rules( parserLevelRoleSetList(level_rule_sets));
+        if (role_rule_sets) setRole_rules(parserRoleLabelSetList(role_rule_sets));
+        if (label_rule_sets) setLabel_rules(parserLabelRoleSetList(label_rule_sets));
 
       } catch (e) {
         console.error("初始化失败", e);
@@ -75,19 +77,19 @@ const App = () => {
   useEffect(() => {
     if (inited) {
       console.log("set level_rules ", level_rules);
-      client.set('level_rule_sets', JSON.stringify(level_rules));
+      client.set('level_rule_sets', dumpLevelRuleSetList(level_rules));
     }
   }, [level_rules])
   useEffect(() => {
     if (inited) {
       console.log("set role_rules ", role_rules);
-      client.set('role_rule_sets', JSON.stringify(role_rules));
+      client.set('role_rule_sets', dumpRoleLabelRuleSetList(role_rules));
     }
   }, [role_rules])
   useEffect(() => {
     if (inited) {
       console.log("set label_rules ", label_rules);
-      client.set('label_rule_sets', JSON.stringify(label_rules));
+      client.set('label_rule_sets', dumpRoleLabelRuleSetList(label_rules));
     }
   }, [label_rules])
 
@@ -126,8 +128,8 @@ const App = () => {
         <Box display={show_settings ? 'none' : 'block'}>
           <LogView
             level_rules_sets={level_rules}
-            role_rule_sets={role_rules}
-            label_rule_sets={label_rules}
+            role_rules_sets={role_rules}
+            label_rules_sets={label_rules}
             project_location={projection_path} />
         </Box>
       </Box>
