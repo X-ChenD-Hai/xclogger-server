@@ -8,12 +8,10 @@ use tauri::{AppHandle, State};
 async fn stop_server(handler: State<'_, LogHandler>) -> Result<String, String> {
     handler.stop_server().map_err(|e| e.to_string())
 }
-
 #[tauri::command]
 async fn start_server(app: AppHandle, handler: State<'_, LogHandler>) -> Result<String, String> {
     handler.start_server(&app).map_err(|e| e.to_string())
 }
-
 #[tauri::command]
 async fn get_messages(
     app_handle: AppHandle,
@@ -26,7 +24,6 @@ async fn get_messages(
     }
     handler.db.get_messages(limit, offset)
 }
-
 #[tauri::command]
 async fn get_message_count(app: AppHandle, handler: State<'_, LogHandler>) -> Result<i32, String> {
     handler.connect_db(&app)?;
@@ -68,6 +65,28 @@ async fn get_server_state(handler: State<'_, LogHandler>) -> Result<String, Stri
     serde_json::to_string(&handler.get_server_state()?).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+async fn filter_messages(
+    app: AppHandle,
+    handler: State<'_, LogHandler>,
+    config: FilterConfig,
+    order_by: OrderBy,
+    limit: i32,
+    offset: i32,
+) -> Result<String, String> {
+    handler.connect_db(&app)?;
+    handler.db.filter_messages(&config, &order_by, &limit, &offset)
+}
+
+#[tauri::command]
+async fn filter_messages_count(
+    app: AppHandle,
+    handler: State<'_, LogHandler>,
+    config: FilterConfig,
+) -> Result<i32, String> {
+    handler.connect_db(&app)?;
+    handler.db.filter_messages_count(&config)
+}
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -79,6 +98,8 @@ pub fn run() {
             set_server_address,
             get_server_state,
             get_messages,
+            filter_messages_count,
+            filter_messages,
             get_message_count,
             config_set,
             config_get

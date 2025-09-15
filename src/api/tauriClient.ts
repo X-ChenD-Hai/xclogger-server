@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { IClient, Message } from "./client";
+import { FilterConfig, IClient, Message, OrderBy } from "./client";
 import { listen } from "@tauri-apps/api/event";
 
 export interface TauriParam {
@@ -258,7 +258,34 @@ export class TauriClient implements IClient {
             throw new Error("Invalid message format");
         }
     }
+    async filter_messages(
+        config: FilterConfig,
+        order: OrderBy,
+        limit: number,
+        offset: number
+    ): Promise<Message[]> {
+        try {
+            const res = await invoke<string>("filter_messages", {
+                config,
+                orderBy: order,
+                limit,
+                offset
+            });
+            return JSON.parse(res) as Message[];
+        } catch (error) {
+            console.error("Error invoking 'filter_messages':", error);
+            throw error;
+        }
+    }
 
+    async filter_messages_count(config: FilterConfig): Promise<number> {
+        try {
+            return await invoke<number>("filter_messages_count", { config });
+        } catch (error) {
+            console.error("Error invoking 'filter_messages_count':", error);
+            throw error;
+        }
+    }
 }
 const client = TauriClient.getInstance();
 export default client;
