@@ -97,7 +97,7 @@ mod test {
             line: None,
             messages: None,
         };
-        let order_by = OrderBy::Id;
+        let order_by = MessageField::Id;
         let limit = 100;
         let offset = 0;
         println!("{:?}", db.filter_messages_count(&config));
@@ -105,5 +105,21 @@ mod test {
             "{:?}",
             db.filter_messages(&config, &order_by, &limit, &offset)
         );
+    }
+    #[test]
+    fn get_distinct() {
+        let db = Arc::new(Mutex::new(Option::<Connection>::None));
+        db.connect(&PathBuf::from("xclogger.db")).unwrap();
+        let labels = db.get_distinct(&MessageField::Label).unwrap();
+        println!("{:?}", labels);
+        let files = db.get_distinct(&MessageField::File).unwrap();
+        println!("{:?}", files);
+        let roles = db.get_distinct(&MessageField::Role).unwrap();
+        println!("{:?}", roles);
+        let process_ids = db.get_distinct(&MessageField::ProcessId).unwrap();
+        println!("{:?}", process_ids);
+        let thread_ids = db.get_distinct(&MessageField::ThreadId).unwrap();
+        println!("{:?}", thread_ids);
+
     }
 }

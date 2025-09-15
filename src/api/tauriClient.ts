@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { FilterConfig, IClient, Message, OrderBy } from "./client";
+import { FilterConfig, IClient, Message, MessageField } from "./client";
 import { listen } from "@tauri-apps/api/event";
 
 export interface TauriParam {
@@ -41,6 +41,7 @@ export enum TauriCommands {
     GetMessageCount = "get_message_count",
     FilterMessages = "filter_messages",
     FilterMessagesCount = "filter_messages_count",
+    GetDistinct = "get_distinct",
     ConfigSet = "config_set",
     ConfigGet = "config_get",
 }
@@ -65,6 +66,16 @@ export class TauriClient implements IClient {
     private debounceTimer: ReturnType<typeof setTimeout> | null = null;
     private constructor() {
         console.log("TauriClient initialized");
+    }
+    async get_distinct(field: MessageField): Promise<Array<string>> {
+        try {
+            const res = await invoke<string>(TauriCommands.GetDistinct, { field });
+            console.log("distinct result:", res);
+            return JSON.parse(res) as Array<string>;
+        } catch (error) {
+            console.error("Error invoking 'get_distinct':", error);
+            throw error; // 重新抛出错误以便调用者处理
+        }
     }
     async get_messages_count(): Promise<number> {
         try {
@@ -262,7 +273,7 @@ export class TauriClient implements IClient {
     }
     async filter_messages(
         config: FilterConfig,
-        order: OrderBy,
+        order: MessageField,
         limit: number,
         offset: number
     ): Promise<Message[]> {

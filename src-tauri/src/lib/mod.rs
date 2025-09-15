@@ -70,12 +70,14 @@ async fn filter_messages(
     app: AppHandle,
     handler: State<'_, LogHandler>,
     config: FilterConfig,
-    order_by: OrderBy,
+    order_by: MessageField,
     limit: i32,
     offset: i32,
 ) -> Result<String, String> {
     handler.connect_db(&app)?;
-    handler.db.filter_messages(&config, &order_by, &limit, &offset)
+    handler
+        .db
+        .filter_messages(&config, &order_by, &limit, &offset)
 }
 
 #[tauri::command]
@@ -87,6 +89,16 @@ async fn filter_messages_count(
     handler.connect_db(&app)?;
     handler.db.filter_messages_count(&config)
 }
+#[tauri::command]
+async fn get_distinct(
+    app: AppHandle,
+    handler: State<'_, LogHandler>,
+    field: MessageField,
+) -> Result<String, String> {
+    handler.connect_db(&app)?;
+    handler.db.get_distinct(&field)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -101,6 +113,7 @@ pub fn run() {
             filter_messages_count,
             filter_messages,
             get_message_count,
+            get_distinct,
             config_set,
             config_get
         ])

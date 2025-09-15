@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Box, Typography } from '@mui/material';
-import { Message, FilterConfig, OrderBy } from '../api/client';
+import { Message, FilterConfig, MessageField } from '../api/client';
 import { FormateMessage, LabelRuleSet, RoleRuleSet } from '../api/rules';
 import client from '../api/tauriClient';
 import { LevelRuleSet } from '../api/rules';
@@ -25,7 +25,7 @@ const LogView = (props: LogViewProps) => {
     const [observer, setObserver] = useState<IntersectionObserver | null>(null);
     const [isSearching, setIsSearching] = useState(false);
     const [searchConfig, setSearchConfig] = useState<FilterConfig>({});
-    const [searchOrderBy, setSearchOrderBy] = useState<OrderBy>(OrderBy.time);
+    const [searchOrderBy, setSearchOrderBy] = useState<MessageField>(MessageField.time);
     const pageSize = 20; // 每页加载数量
 
     // 加载更多消息的函数
@@ -57,7 +57,7 @@ const LogView = (props: LogViewProps) => {
     }, [currentPage, hasMore, loading, pageSize, isSearching, searchConfig, searchOrderBy]);
 
     // 处理搜索
-    const handleSearch = useCallback(async (config: FilterConfig, orderBy: OrderBy) => {
+    const handleSearch = useCallback(async (config: FilterConfig, orderBy: MessageField) => {
         setLoading(true);
         try {
             setSearchConfig(config);
@@ -82,7 +82,7 @@ const LogView = (props: LogViewProps) => {
         try {
             setIsSearching(false);
             setSearchConfig({});
-            setSearchOrderBy(OrderBy.time);
+            setSearchOrderBy(MessageField.time);
             setCurrentPage(0);
 
             const initialMessages = await client.get_messages(pageSize, 0);

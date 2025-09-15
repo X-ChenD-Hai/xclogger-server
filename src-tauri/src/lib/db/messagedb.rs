@@ -50,7 +50,7 @@ pub struct FilterConfig {
     pub messages: Option<StringPattern>,
 }
 #[derive(Deserialize, Debug)]
-pub enum OrderBy {
+pub enum MessageField {
     Id,
     Role,
     Label,
@@ -70,11 +70,12 @@ pub trait MessageDB {
     fn filter_messages(
         &self,
         config: &FilterConfig,
-        order_by: &OrderBy,
+        order_by: &MessageField,
         limit: &i32,
         offset: &i32,
     ) -> Result<String, String>;
     fn filter_messages_count(&self, config: &FilterConfig) -> Result<i32, String>;
+    fn get_distinct(&self, field: &MessageField) -> Result<String, String>;
 }
 // 辅助函数：构建字符串条件
 fn build_string_condition(
@@ -311,7 +312,7 @@ impl MessageDB for Arc<Mutex<Option<Connection>>> {
     fn filter_messages(
         &self,
         config: &FilterConfig,
-        order_by: &OrderBy,
+        order_by: &MessageField,
         limit: &i32,
         offset: &i32,
     ) -> Result<String, String> {
@@ -331,16 +332,16 @@ impl MessageDB for Arc<Mutex<Option<Connection>>> {
         // 添加ORDER BY子句
         query.push_str(" ORDER BY ");
         match order_by {
-            OrderBy::Id => query.push_str("id"),
-            OrderBy::Role => query.push_str("role"),
-            OrderBy::Label => query.push_str("label"),
-            OrderBy::File => query.push_str("file"),
-            OrderBy::Function => query.push_str("function"),
-            OrderBy::Time => query.push_str("time"),
-            OrderBy::ProcessId => query.push_str("process_id"),
-            OrderBy::ThreadId => query.push_str("thread_id"),
-            OrderBy::Line => query.push_str("line"),
-            OrderBy::Level => query.push_str("level"),
+            MessageField::Id => query.push_str("id"),
+            MessageField::Role => query.push_str("role"),
+            MessageField::Label => query.push_str("label"),
+            MessageField::File => query.push_str("file"),
+            MessageField::Function => query.push_str("function"),
+            MessageField::Time => query.push_str("time"),
+            MessageField::ProcessId => query.push_str("process_id"),
+            MessageField::ThreadId => query.push_str("thread_id"),
+            MessageField::Line => query.push_str("line"),
+            MessageField::Level => query.push_str("level"),
         }
         query.push_str(" DESC");
 
@@ -401,5 +402,69 @@ impl MessageDB for Arc<Mutex<Option<Connection>>> {
             .map_err(|e| e.to_string())?;
 
         Ok(count)
+    }
+
+    fn get_distinct(&self, field: &MessageField) -> Result<String, String> {
+        let conn_guard = self.lock().map_err(|e| e.to_string())?;
+        let conn = conn_guard.as_ref().ok_or("数据库未连接".to_string())?;
+
+        // 根据字段确定要查询的列名
+        let column = match field {
+            MessageField::Id => "id",
+            MessageField::Role => "role",
+            MessageField::Label => "label",
+            MessageField::File => "file",
+            MessageField::Function => "function",
+            MessageField::Time => "time",
+            MessageField::ProcessId => "process_id",
+            MessageField::ThreadId => "thread_id",
+            MessageField::Line => "line",
+            MessageField::Level => "level",
+        };
+
+        let query = format!(
+            "SELECT DISTINCT {} FROM log_messages ORDER BY {}",
+            column, column
+        );
+
+        let mut stmt = conn.prepare(&query).map_err(|e| e.to_string())?;
+
+        // 根据字段类型处理不同的返回值
+        match field {
+            MessageField::Id => {
+                let ids: Result<Vec<u64>, _> = stmt
+                    .query_map([], |row| row.get(0))
+                    .map_err(|e| e.to_string())?
+                    .collect();
+                serde_json::to_string(&ids.map_err(|e| e.to_string())?).map_err(|e| e.to_string())
+            }
+            MessageField::Role
+            | MessageField::Label
+            | MessageField::File
+            | MessageField::Function => {
+                let strings: Result<Vec<String>, _> = stmt
+                    .query_map([], |row| row.get(0))
+                    .map_err(|e| e.to_string())?
+                    .collect();
+                serde_json::to_string(&strings.map_err(|e| e.to_string())?)
+                    .map_err(|e| e.to_string())
+            }
+            MessageField::Time | MessageField::ProcessId | MessageField::ThreadId => {
+                let numbers: Result<Vec<i64>, _> = stmt
+                    .query_map([], |row| row.get(0))
+                    .map_err(|e| e.to_string())?
+                    .collect();
+                serde_json::to_string(&numbers.map_err(|e| e.to_string())?)
+                    .map_err(|e| e.to_string())
+            }
+            MessageField::Line | MessageField::Level => {
+                let numbers: Result<Vec<i32>, _> = stmt
+                    .query_map([], |row| row.get(0))
+                    .map_err(|e| e.to_string())?
+                    .collect();
+                serde_json::to_string(&numbers.map_err(|e| e.to_string())?)
+                    .map_err(|e| e.to_string())
+            }
+        }
     }
 }

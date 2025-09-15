@@ -18,17 +18,17 @@ import {
   Search as SearchIcon,
   Clear as ClearIcon
 } from '@mui/icons-material';
-import { FilterConfig, OrderBy, PatternMode } from '../api/client';
+import { FilterConfig, MessageField, PatternMode } from '../api/client';
 
 interface SearchBarProps {
-  onSearch: (config: FilterConfig, orderBy: OrderBy) => void;
+  onSearch: (config: FilterConfig, orderBy: MessageField) => void;
   onReset: () => void;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onReset }) => {
   const [expanded, setExpanded] = useState(false);
   const [filterConfig, setFilterConfig] = useState<FilterConfig>({});
-  const [orderBy, setOrderBy] = useState<OrderBy>(OrderBy.time);
+  const [orderBy, setOrderBy] = useState<MessageField>(MessageField.time);
 
   const handleStringPatternChange = (
     field: keyof FilterConfig,
@@ -58,7 +58,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onReset }) => {
 
   const handleReset = () => {
     setFilterConfig({});
-    setOrderBy(OrderBy.time);
+    setOrderBy(MessageField.time);
     onReset();
   };
 
@@ -224,18 +224,18 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onReset }) => {
               <Select
                 value={orderBy}
                 label="排序方式"
-                onChange={(e) => setOrderBy(e.target.value as OrderBy)}
+                onChange={(e) => setOrderBy(e.target.value as MessageField)}
               >
-                <MenuItem value={OrderBy.Id}>ID</MenuItem>
-                <MenuItem value={OrderBy.Role}>角色</MenuItem>
-                <MenuItem value={OrderBy.Label}>标签</MenuItem>
-                <MenuItem value={OrderBy.file}>文件</MenuItem>
-                <MenuItem value={OrderBy.function}>函数</MenuItem>
-                <MenuItem value={OrderBy.time}>时间</MenuItem>
-                <MenuItem value={OrderBy.process_id}>进程ID</MenuItem>
-                <MenuItem value={OrderBy.thread_id}>线程ID</MenuItem>
-                <MenuItem value={OrderBy.line}>行号</MenuItem>
-                <MenuItem value={OrderBy.level}>日志级别</MenuItem>
+                <MenuItem value={MessageField.Id}>ID</MenuItem>
+                <MenuItem value={MessageField.Role}>角色</MenuItem>
+                <MenuItem value={MessageField.Label}>标签</MenuItem>
+                <MenuItem value={MessageField.file}>文件</MenuItem>
+                <MenuItem value={MessageField.function}>函数</MenuItem>
+                <MenuItem value={MessageField.time}>时间</MenuItem>
+                <MenuItem value={MessageField.process_id}>进程ID</MenuItem>
+                <MenuItem value={MessageField.thread_id}>线程ID</MenuItem>
+                <MenuItem value={MessageField.line}>行号</MenuItem>
+                <MenuItem value={MessageField.level}>日志级别</MenuItem>
               </Select>
             </FormControl>
           </Box>

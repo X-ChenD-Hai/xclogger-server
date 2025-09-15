@@ -12,15 +12,15 @@ export interface Message {
     messages: Array<Array<string>>; // 合并后的消息内容
     created_at?: string; // 记录插入时间 (ISO 字符串格式，如 "2024-01-01T12:00:00Z")
 }
-export enum OrderBy {
+export enum MessageField {
     Id = 'Id',
     Role = 'Role',
     Label = 'Label',
     file = 'File',
     function = 'Function',
     time = 'Time',
-    process_id = 'Process_id',
-    thread_id = 'Thread_id',
+    process_id = 'ProcessId',
+    thread_id = 'ThreadId',
     line = 'Line',
     level = 'Level',
 }
@@ -60,6 +60,7 @@ export interface IClient {
     onRecviveMesage(callback: (msg: Message) => void): void;
     start_server(addr: string): void;
     stop_server(): void;
-    filter_messages(config: FilterConfig, oeder: OrderBy, limit: number, offset: number): Promise<Array<Message>>;
+    filter_messages(config: FilterConfig, oeder: MessageField, limit: number, offset: number): Promise<Array<Message>>;
     filter_messages_count(config: FilterConfig): Promise<number>;
+    get_distinct(field: MessageField): Promise<Array<string>>;
 }
