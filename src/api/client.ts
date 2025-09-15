@@ -1,7 +1,7 @@
 export interface Message {
     id?: number; // 自增主键，Rust端返回时可能包含
     role: string; // 角色信息
-    label?: string; // 标签，可选
+    label: string; // 标签，可选
     file?: string | null; // 文件名，可选
     function?: string | null; // 函数名，可选
     time: number; // 时间戳 (Unix 时间戳或类似)

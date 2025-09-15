@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Box, Chip, Link, Tooltip, Typography } from '@mui/material';
 import { Message } from '../api/client';
-import { FormateMessage } from '../api/rules';
+import { FormateMessage, LabelRuleSet, RoleRuleSet } from '../api/rules';
 import client from '../api/tauriClient';
 import { LevelRuleSet, ChipStyle } from '../api/rules';
 interface MessageCardProps {
@@ -81,6 +81,8 @@ const MessageCard: React.FC<MessageCardProps> = ({
 interface LogViewProps {
     project_location?: string
     level_rules_sets: LevelRuleSet[]
+    role_rule_sets: RoleRuleSet[]
+    label_rule_sets: LabelRuleSet[]
 }
 
 const LogView = (props: LogViewProps) => {

@@ -7,11 +7,15 @@ import { MdLabelImportant } from "react-icons/md";
 import ClearAllIcon from '@mui/icons-material/ClearAll';
 import LevelPanel, { LevelPanelProps } from './settings/LevelPanel';
 import ProjectsPanel, { ProjectsPanelProps } from './settings/ProjectsPanel';
+import RolePanel, { RolePanelProps } from './settings/RolePanel';
+import LabelPanel, { LabelPanelProps } from './settings/LabelPanel';
 interface SettingsProps { }
 
 
 
-const SettingsPanel = (props: SettingsProps & ProjectsPanelProps & LevelPanelProps) => {
+interface SettingsPanelAllProps extends SettingsProps, ProjectsPanelProps, LevelPanelProps, RolePanelProps, LabelPanelProps {}
+
+const SettingsPanel = (props: SettingsPanelAllProps) => {
     type ItemKey = 'role' | 'project' | 'level' | 'label';
     interface SettingItem {
         name: string;
@@ -37,11 +41,11 @@ const SettingsPanel = (props: SettingsProps & ProjectsPanelProps & LevelPanelPro
             case 'project':
                 return <ProjectsPanel project_location={props.project_location} />
             case 'role':
-                return <div>角色设置</div>
+                return <RolePanel role_rule_sets={props.role_rule_sets} />
             case 'level':
                 return <LevelPanel level_rule_sets={props.level_rule_sets} />
             case 'label':
-                return <div>标签设置</div>
+                return <LabelPanel label_rule_sets={props.label_rule_sets} />
             default:
                 return <div>默认设置</div>
         }
