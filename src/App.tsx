@@ -8,8 +8,9 @@ import AppHeader from './components/AppHeader';
 // import ApiDebugView from './components/ApiDebugView';
 import LogView from './components/LogView';
 import client from './api/tauriClient';
-import { LevelRuleSet, 
-  RoleRuleSet, 
+import {
+  LevelRuleSet,
+  RoleRuleSet,
   LabelRuleSet,
   parserLabelRoleSetList,
   parserLevelRoleSetList,
@@ -33,6 +34,7 @@ const App = () => {
   const [level_rules, setLevel_rules] = useState<Array<LevelRuleSet>>([]);
   const [role_rules, setRole_rules] = useState<Array<RoleRuleSet>>([]);
   const [label_rules, setLabel_rules] = useState<Array<LabelRuleSet>>([]);
+  const [mutiline, setMutiline] = useState(true);
   const [inited, setInited] = useState(false);
   // 使用useMemo根据模式创建主题，优化性能
 
@@ -60,7 +62,7 @@ const App = () => {
         if (theme) setMode(theme as ThemeMode);
         if (projection_path) setProjection_path(projection_path);
 
-        if (level_rule_sets) setLevel_rules( parserLevelRoleSetList(level_rule_sets));
+        if (level_rule_sets) setLevel_rules(parserLevelRoleSetList(level_rule_sets));
         if (role_rule_sets) setRole_rules(parserRoleLabelSetList(role_rule_sets));
         if (label_rule_sets) setLabel_rules(parserLabelRoleSetList(label_rule_sets));
 
@@ -116,6 +118,7 @@ const App = () => {
           thamestate={[mode, (m) => { setMode(m); client.set('theme', m) }]}
           show_search={[show_searchbar, setShowSearchbar]}
           show_settings={[show_settings, value => { setShow_settings(value); setTitle(value ? '设置' : 'xclogger-server'); }]}
+          mutiline={[mutiline, setMutiline]}
           title={title} />
       </Box>
       <Box sx={{ height: '90vh', overflow: 'auto' }}>
@@ -127,6 +130,8 @@ const App = () => {
         />}
         <Box display={show_settings ? 'none' : 'block'}>
           <LogView
+            show_search_bar={show_searchbar}
+            mutiline={mutiline}
             level_rules_sets={level_rules}
             role_rules_sets={role_rules}
             label_rules_sets={label_rules}
