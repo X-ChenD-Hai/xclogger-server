@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   TextField,
@@ -10,7 +10,9 @@ import {
   Paper,
   Typography,
   IconButton,
-  Collapse
+  Collapse,
+  Autocomplete,
+  CircularProgress
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -19,6 +21,7 @@ import {
   Clear as ClearIcon
 } from '@mui/icons-material';
 import { FilterConfig, MessageField, PatternMode } from '../api/client';
+import client from '../api/tauriClient';
 
 interface SearchBarProps {
   onSearch: (config: FilterConfig, orderBy: MessageField) => void;
@@ -29,6 +32,85 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onReset }) => {
   const [expanded, setExpanded] = useState(false);
   const [filterConfig, setFilterConfig] = useState<FilterConfig>({});
   const [orderBy, setOrderBy] = useState<MessageField>(MessageField.time);
+  
+  // State for distinct values
+  const [labelOptions, setLabelOptions] = useState<string[]>([]);
+  const [roleOptions, setRoleOptions] = useState<string[]>([]);
+  const [fileOptions, setFileOptions] = useState<string[]>([]);
+  const [functionOptions, setFunctionOptions] = useState<string[]>([]);
+  const [messagesOptions, setMessagesOptions] = useState<string[]>([]);
+  
+  // State for loading
+  const [loadingLabel, setLoadingLabel] = useState(false);
+  const [loadingRole, setLoadingRole] = useState(false);
+  const [loadingFile, setLoadingFile] = useState(false);
+  const [loadingFunction, setLoadingFunction] = useState(false);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  
+  // Load distinct values when expanded
+  useEffect(() => {
+    if (expanded) {
+      loadDistinctValues();
+    }
+  }, [expanded]);
+  
+  const loadDistinctValues = async () => {
+    // Load label options
+    setLoadingLabel(true);
+    try {
+      const labels = await client.get_distinct(MessageField.Label);
+      setLabelOptions(labels.filter(label => label && label.trim() !== ''));
+    } catch (error) {
+      console.error('Failed to load label options:', error);
+    } finally {
+      setLoadingLabel(false);
+    }
+    
+    // Load role options
+    setLoadingRole(true);
+    try {
+      const roles = await client.get_distinct(MessageField.Role);
+      setRoleOptions(roles.filter(role => role && role.trim() !== ''));
+    } catch (error) {
+      console.error('Failed to load role options:', error);
+    } finally {
+      setLoadingRole(false);
+    }
+    
+    // Load file options
+    setLoadingFile(true);
+    try {
+      const files = await client.get_distinct(MessageField.file);
+      setFileOptions(files.filter(file => file && file.trim() !== ''));
+    } catch (error) {
+      console.error('Failed to load file options:', error);
+    } finally {
+      setLoadingFile(false);
+    }
+    
+    // Load function options
+    setLoadingFunction(true);
+    try {
+      const functions = await client.get_distinct(MessageField.function);
+      setFunctionOptions(functions.filter(func => func && func.trim() !== ''));
+    } catch (error) {
+      console.error('Failed to load function options:', error);
+    } finally {
+      setLoadingFunction(false);
+    }
+    
+    // Load messages options
+    setLoadingMessages(true);
+    try {
+      // For messages, we might want to get distinct message patterns or common phrases
+      // For now, we'll use an empty array as messages can be very diverse
+      setMessagesOptions([]);
+    } catch (error) {
+      console.error('Failed to load messages options:', error);
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
 
   const handleStringPatternChange = (
     field: keyof FilterConfig,
@@ -81,50 +163,140 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onReset }) => {
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             {/* Label filter */}
             <Box sx={{ minWidth: 200 }}>
-              <TextField
-                label="标签"
+              <Autocomplete
+                freeSolo
+                options={labelOptions}
                 value={(filterConfig.label as any)?.value || ''}
-                onChange={(e) => handleStringPatternChange('label', PatternMode.Contain, e.target.value)}
+                onChange={(_, newValue) => handleStringPatternChange('label', PatternMode.Contain, newValue || '')}
+                onInputChange={(_, newInputValue) => handleStringPatternChange('label', PatternMode.Contain, newInputValue)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="标签"
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {loadingLabel ? <CircularProgress color="inherit" size={20} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+                loading={loadingLabel}
                 fullWidth
               />
             </Box>
 
             {/* Role filter */}
             <Box sx={{ minWidth: 200 }}>
-              <TextField
-                label="角色"
+              <Autocomplete
+                freeSolo
+                options={roleOptions}
                 value={(filterConfig.role as any)?.value || ''}
-                onChange={(e) => handleStringPatternChange('role', PatternMode.Contain, e.target.value)}
+                onChange={(_, newValue) => handleStringPatternChange('role', PatternMode.Contain, newValue || '')}
+                onInputChange={(_, newInputValue) => handleStringPatternChange('role', PatternMode.Contain, newInputValue)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="角色"
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {loadingRole ? <CircularProgress color="inherit" size={20} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+                loading={loadingRole}
                 fullWidth
               />
             </Box>
 
             {/* File filter */}
             <Box sx={{ minWidth: 200 }}>
-              <TextField
-                label="文件"
+              <Autocomplete
+                freeSolo
+                options={fileOptions}
                 value={(filterConfig.file as any)?.value || ''}
-                onChange={(e) => handleStringPatternChange('file', PatternMode.Contain, e.target.value)}
+                onChange={(_, newValue) => handleStringPatternChange('file', PatternMode.Contain, newValue || '')}
+                onInputChange={(_, newInputValue) => handleStringPatternChange('file', PatternMode.Contain, newInputValue)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="文件"
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {loadingFile ? <CircularProgress color="inherit" size={20} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+                loading={loadingFile}
                 fullWidth
               />
             </Box>
 
             {/* Function filter */}
             <Box sx={{ minWidth: 200 }}>
-              <TextField
-                label="函数"
+              <Autocomplete
+                freeSolo
+                options={functionOptions}
                 value={(filterConfig.function as any)?.value || ''}
-                onChange={(e) => handleStringPatternChange('function', PatternMode.Contain, e.target.value)}
+                onChange={(_, newValue) => handleStringPatternChange('function', PatternMode.Contain, newValue || '')}
+                onInputChange={(_, newInputValue) => handleStringPatternChange('function', PatternMode.Contain, newInputValue)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="函数"
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {loadingFunction ? <CircularProgress color="inherit" size={20} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+                loading={loadingFunction}
                 fullWidth
               />
             </Box>
 
             {/* Messages filter */}
             <Box sx={{ minWidth: 200 }}>
-              <TextField
-                label="消息内容"
+              <Autocomplete
+                freeSolo
+                options={messagesOptions}
                 value={(filterConfig.messages as any)?.value || ''}
-                onChange={(e) => handleStringPatternChange('messages', PatternMode.Contain, e.target.value)}
+                onChange={(_, newValue) => handleStringPatternChange('messages', PatternMode.Contain, newValue || '')}
+                onInputChange={(_, newInputValue) => handleStringPatternChange('messages', PatternMode.Contain, newInputValue)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="消息内容"
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {loadingMessages ? <CircularProgress color="inherit" size={20} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+                loading={loadingMessages}
                 fullWidth
               />
             </Box>

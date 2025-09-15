@@ -1,12 +1,16 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import { IconButton, Tooltip } from '@mui/material';
+import { IconButton, TextField, Tooltip } from '@mui/material';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkMode from '@mui/icons-material/DarkMode';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SearchIcon from '@mui/icons-material/Search';
 import DensityMediumIcon from '@mui/icons-material/DensityMedium';
 import DensitySmallIcon from '@mui/icons-material/DensitySmall';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import PauseIcon from '@mui/icons-material/Pause';
+import React from 'react';
+import client from '../api/tauriClient';
 export type ThemeMode = 'light' | 'dark';
 type State<T> = [T, (value: T) => void];
 interface AppProps {
@@ -24,6 +28,41 @@ const AppHeader = (pros: AppProps) => {
             setAct_settings],
             show_search: [show_search, setShowSearchbar]
         } = pros;
+    const [server_running, setServerRunning] = React.useState(false);
+    const [address, setAddress] = React.useState('');
+    const [inited, setInited] = React.useState(false);
+
+    React.useEffect(() => {
+        async function init() {
+            const [address,status] = await Promise.all([client.get('address'),client.get_server_state()]);
+            if (address) {
+                setAddress(address)
+            }
+            if (status) {
+                setServerRunning(status.is_running)
+            }
+            setInited(true)
+        }
+        init()
+    }, [])
+
+    React.useEffect(() => {
+        if (inited)
+            client.set('address', address)
+    }, [address])
+
+    const handleServerRunButtonClick = () => {
+        client.start_server(address).then(() => {
+            setServerRunning(true)
+        })
+    }
+    const handleServerStopButtonClick = () => {
+        client.stop_server().then(() => {
+            setServerRunning(false)
+        })
+    }
+
+
 
     return (<>
         <Box sx={{
@@ -33,7 +72,22 @@ const AppHeader = (pros: AppProps) => {
             p: 1,
             bgcolor: 'ba'
         }}>
-            {pros.title ? <Typography variant="h6" component="h1" sx={{ ml: 2, mr: 2 }}>{pros.title}</Typography> : null}
+            <Box display='flex' flexDirection='row' justifyItems='start'>
+                {pros.title ? <Typography variant="h6" component="h1" sx={{ ml: 2, mr: 2 }}>{pros.title}</Typography> : null}
+                <TextField
+                    size='small'
+                    id="standard-basic"
+                    disabled={server_running}
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                />
+                <Tooltip title={server_running ? '停止服务' : '启动服务'}>
+                    <IconButton size='small'>
+                        {server_running ? <PauseIcon onClick={handleServerStopButtonClick} /> : <PlayArrowIcon onClick={handleServerRunButtonClick} />}
+                    </IconButton>
+                </Tooltip>
+
+            </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'row-reverse' }}>
                 <Tooltip title="设置">
                     <IconButton onClick={() => setAct_settings(!act_settings)}
