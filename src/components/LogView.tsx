@@ -160,10 +160,12 @@ const LogView = (props: LogViewProps) => {
     return (
         <Box >
             {props.show_search_bar && (
-                <SearchBar
-                    onSearch={handleSearch}
-                    onReset={handleResetSearch}
-                />
+                <Box sx={{ position: 'sticky', top: 0, zIndex: 1000 }}>
+                    <SearchBar
+                        onSearch={handleSearch}
+                        onReset={handleResetSearch}
+                    />
+                </Box>
             )}
 
             {props.mutiline ? messages.map((message) => (
