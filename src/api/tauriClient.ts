@@ -112,7 +112,7 @@ export class TauriClient implements IClient {
         }
 
     }
-    async start_server(_: string) {
+    async start_server() {
         try {
             const res = await
                 invoke<String>(TauriCommands.StartServer)

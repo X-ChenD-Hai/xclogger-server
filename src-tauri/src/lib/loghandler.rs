@@ -53,11 +53,22 @@ impl LogHandler {
                         )
                         .expect("Failed to connect to database");
                     }
-                    db.insert_message(&data).expect("Failed to insert message");
                 }
                 app.emit(
                     "message-received",
-                    data.to_json_string().expect("Failed to serialize message"),
+                    &DBMessage {
+                        id: db.insert_message(&data).expect("Failed to insert message"),
+                        role: data.role.clone(),
+                        label: data.label.clone(),
+                        file: data.file.clone(),
+                        function: data.function.clone(),
+                        time: data.time,
+                        process_id: data.process_id,
+                        thread_id: data.thread_id,
+                        line: data.line,
+                        level: data.level,
+                        messages: data.messages.clone(),
+                    },
                 )
                 .expect("Failed to emit message-received event");
             });

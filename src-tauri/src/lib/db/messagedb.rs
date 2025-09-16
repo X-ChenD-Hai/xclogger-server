@@ -3,8 +3,8 @@ use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 #[derive(Serialize, Debug)]
-struct DBMessage {
-    pub id: u64,
+pub struct DBMessage {
+    pub id: usize,
     pub role: String,
     pub label: String,
     pub file: String,

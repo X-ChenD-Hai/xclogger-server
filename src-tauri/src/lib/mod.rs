@@ -65,7 +65,6 @@ async fn set_server_address(
 async fn get_server_state(handler: State<'_, LogHandler>) -> Result<String, String> {
     serde_json::to_string(&handler.get_server_state()?).map_err(|e| e.to_string())
 }
-
 #[tauri::command]
 async fn filter_messages(
     app: AppHandle,
@@ -81,7 +80,6 @@ async fn filter_messages(
         .db
         .filter_messages(&config, &order_by, &limit, &offset, desc)
 }
-
 #[tauri::command]
 async fn filter_messages_count(
     app: AppHandle,

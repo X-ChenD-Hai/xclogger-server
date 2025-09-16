@@ -59,7 +59,7 @@ const AppHeader = (pros: AppProps) => {
         await client.onRecviveMesage(() => {
             onMessageChange?.()
         })
-        await client.start_server(address).then(() => {
+        await client.start_server().then(() => {
             setServerRunning(true)
         })
     }
