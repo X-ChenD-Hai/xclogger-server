@@ -11,6 +11,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
 import React from 'react';
 import client from '../api/tauriClient';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 export type ThemeMode = 'light' | 'dark';
 type State<T> = [T, (value: T) => void];
 interface AppProps {
@@ -19,14 +20,16 @@ interface AppProps {
     show_search: State<boolean>;
     mutiline: State<boolean>,
     title?: string,
-    status?: string
+    status?: string,
+    onMessageChange?: () => void; // Callback for message changes (deletions)
 }
 
 const AppHeader = (pros: AppProps) => {
     const
         { thamestate: [mode, setMode], show_settings: [act_settings,
             setAct_settings],
-            show_search: [show_search, setShowSearchbar]
+            show_search: [show_search, setShowSearchbar],
+            onMessageChange
         } = pros;
     const [server_running, setServerRunning] = React.useState(false);
     const [address, setAddress] = React.useState('');
@@ -34,7 +37,7 @@ const AppHeader = (pros: AppProps) => {
 
     React.useEffect(() => {
         async function init() {
-            const [address,status] = await Promise.all([client.get('address'),client.get_server_state()]);
+            const [address, status] = await Promise.all([client.get('address'), client.get_server_state()]);
             if (address) {
                 setAddress(address)
             }
@@ -51,8 +54,12 @@ const AppHeader = (pros: AppProps) => {
             client.set('address', address)
     }, [address])
 
-    const handleServerRunButtonClick = () => {
-        client.start_server(address).then(() => {
+    const handleServerRunButtonClick = async () => {
+        await client.set_server_address(address)
+        await client.onRecviveMesage(() => {
+            onMessageChange?.()
+        })
+        await client.start_server(address).then(() => {
             setServerRunning(true)
         })
     }
@@ -61,8 +68,6 @@ const AppHeader = (pros: AppProps) => {
             setServerRunning(false)
         })
     }
-
-
 
     return (<>
         <Box sx={{
@@ -105,6 +110,14 @@ const AppHeader = (pros: AppProps) => {
                     <IconButton onClick={() => setShowSearchbar(!show_search)}
                         color={show_search ? 'primary' : 'inherit'}>
                         <SearchIcon />
+                    </IconButton>
+                </Tooltip>
+                <Tooltip title='清除所有日志'>
+                    <IconButton onClick={async () => {
+                        await client.delete_messages({});
+                        onMessageChange?.();
+                    }}>
+                        <DeleteForeverIcon />
                     </IconButton>
                 </Tooltip>
                 <Tooltip title={pros.mutiline[0] ? '多行' : '单行'}>

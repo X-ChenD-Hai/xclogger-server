@@ -36,6 +36,7 @@ const App = () => {
   const [label_rules, setLabel_rules] = useState<Array<LabelRuleSet>>([]);
   const [mutiline, setMutiline] = useState(true);
   const [inited, setInited] = useState(false);
+  const [messageVersion, setMessageVersion] = useState(0); // Track message changes for synchronization
   // 使用useMemo根据模式创建主题，优化性能
 
 
@@ -119,7 +120,8 @@ const App = () => {
           show_search={[show_searchbar, setShowSearchbar]}
           show_settings={[show_settings, value => { setShow_settings(value); setTitle(value ? '设置' : 'xclogger-server'); }]}
           mutiline={[mutiline, setMutiline]}
-          title={title} />
+          title={title}
+          onMessageChange={() => setMessageVersion(prev => prev + 1)} />
       </Box>
       <Box sx={{ height: '90vh', overflow: 'auto' }}>
         {show_settings && <SettingsPanel
@@ -135,7 +137,8 @@ const App = () => {
             level_rules_sets={level_rules}
             role_rules_sets={role_rules}
             label_rules_sets={label_rules}
-            project_location={projection_path} />
+            project_location={projection_path}
+            messageVersion={messageVersion} />
         </Box>
       </Box>
     </ThemeProvider>

@@ -63,4 +63,5 @@ export interface IClient {
     filter_messages(config: FilterConfig, oeder: MessageField, limit: number, offset: number,desc: boolean): Promise<Array<Message>>;
     filter_messages_count(config: FilterConfig): Promise<number>;
     get_distinct(field: MessageField): Promise<Array<string>>;
+    delete_messages(config: FilterConfig): Promise<number>;
 }

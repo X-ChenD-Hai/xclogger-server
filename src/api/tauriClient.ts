@@ -41,6 +41,7 @@ export enum TauriCommands {
     GetMessageCount = "get_message_count",
     FilterMessages = "filter_messages",
     FilterMessagesCount = "filter_messages_count",
+    DeleteMessages = "delete_messages",
     GetDistinct = "get_distinct",
     ConfigSet = "config_set",
     ConfigGet = "config_get",
@@ -66,6 +67,14 @@ export class TauriClient implements IClient {
     private debounceTimer: ReturnType<typeof setTimeout> | null = null;
     private constructor() {
         console.log("TauriClient initialized");
+    }
+    delete_messages(config: FilterConfig): Promise<number> {
+        try {
+            return invoke<number>(TauriCommands.DeleteMessages, { config });
+        } catch (error) {
+            console.error("Error invoking 'delete_messages':", error);
+            throw error; // 重新抛出错误以便调用者处理
+        }
     }
     async get_distinct(field: MessageField): Promise<Array<string>> {
         try {

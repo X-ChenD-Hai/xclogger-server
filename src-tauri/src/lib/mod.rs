@@ -92,6 +92,15 @@ async fn filter_messages_count(
     handler.db.filter_messages_count(&config)
 }
 #[tauri::command]
+async fn delete_messages(
+    app: AppHandle,
+    handler: State<'_, LogHandler>,
+    config: FilterConfig,
+) -> Result<usize, String> {
+    handler.connect_db(&app)?;
+    handler.db.delete_messages(&config)
+}
+#[tauri::command]
 async fn get_distinct(
     app: AppHandle,
     handler: State<'_, LogHandler>,
@@ -115,6 +124,7 @@ pub fn run() {
             filter_messages_count,
             filter_messages,
             get_message_count,
+            delete_messages,
             get_distinct,
             config_set,
             config_get

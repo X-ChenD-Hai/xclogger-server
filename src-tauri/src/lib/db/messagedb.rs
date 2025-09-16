@@ -77,6 +77,7 @@ pub trait MessageDB {
     ) -> Result<String, String>;
     fn filter_messages_count(&self, config: &FilterConfig) -> Result<i32, String>;
     fn get_distinct(&self, field: &MessageField) -> Result<String, String>;
+    fn delete_messages(&self, config: &FilterConfig) -> Result<usize, String>;
 }
 // 辅助函数：构建字符串条件
 fn build_string_condition(
@@ -470,5 +471,28 @@ impl MessageDB for Arc<Mutex<Option<Connection>>> {
                     .map_err(|e| e.to_string())
             }
         }
+    }
+
+    fn delete_messages(&self, config: &FilterConfig) -> Result<usize, String> {
+        let conn_guard = self.lock().map_err(|e| e.to_string())?;
+        let conn = conn_guard.as_ref().ok_or("数据库未连接".to_string())?;
+
+        // 获取条件语句和参数
+        let (where_clause, params) = get_params(&config);
+
+        // 构建删除语句
+        let query = format!("DELETE FROM log_messages {}", where_clause);
+
+        println!("Delete query: {}", query);
+
+        // 执行删除操作
+        let rows_deleted = conn
+            .execute(
+                &query,
+                rusqlite::params_from_iter(params.iter().map(|p| &**p)),
+            )
+            .map_err(|e| format!("删除消息失败: {}", e))?;
+
+        Ok(rows_deleted)
     }
 }

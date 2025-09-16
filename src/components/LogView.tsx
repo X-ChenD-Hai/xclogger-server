@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Box, Typography } from '@mui/material';
 import { Message, FilterConfig, MessageField } from '../api/client';
 import { FormateMessage, LabelRuleSet, RoleRuleSet } from '../api/rules';
@@ -15,6 +15,7 @@ interface LogViewProps {
     label_rules_sets: LabelRuleSet[]
     show_search_bar: boolean
     mutiline?: boolean
+    messageVersion?: number // Trigger refresh when messages change (e.g., deletions)
 }
 
 const LogView = (props: LogViewProps) => {
@@ -28,6 +29,11 @@ const LogView = (props: LogViewProps) => {
     const [searchOrderBy, setSearchOrderBy] = useState<MessageField>(MessageField.time);
     const [searchDesc, setSearchDesc] = useState<boolean>(false);
     const pageSize = 20; // 每页加载数量
+
+    // Refs for debouncing and message buffering
+    const messageBufferRef = useRef<Message[]>([]);
+    const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const isMountedRef = useRef(true);
 
     // 加载更多消息的函数
     const loadMoreMessages = useCallback(async () => {
@@ -118,6 +124,67 @@ const LogView = (props: LogViewProps) => {
 
         fetchInitialMessages();
     }, [searchDesc]); // 依赖searchDesc以确保排序方向变化时重新加载
+
+    // 处理消息版本变化（例如删除操作后刷新）
+    useEffect(() => {
+        if (props.messageVersion !== undefined && props.messageVersion > 0) {
+            const refreshMessages = async () => {
+                setLoading(true);
+                try {
+                    const refreshedMessages = await client.get_messages(pageSize, 0, searchDesc);
+                    setMessages(refreshedMessages);
+                    setCurrentPage(1);
+                    setHasMore(refreshedMessages.length === pageSize);
+                } catch (error) {
+                    console.error('刷新消息失败:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            refreshMessages();
+        }
+    }, [props.messageVersion, searchDesc, pageSize]);
+
+    // 处理新消息接收（带防抖）
+    useEffect(() => {
+        const handleNewMessage = (msg: Message) => {
+            // 如果在搜索模式下，忽略新消息
+            if (isSearching) {
+                return;
+            }
+
+            // 将消息添加到缓冲区
+            messageBufferRef.current.push(msg);
+
+            // 清除现有的防抖计时器
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+            }
+            if (messageBufferRef.current.length > 100) {
+                setMessages(prev => [...messageBufferRef.current.reverse(), ...prev]);
+                messageBufferRef.current = []; // 清空缓冲区
+            }
+            // 设置新的防抖计时器（100毫秒）
+            debounceTimerRef.current = setTimeout(() => {
+                if (messageBufferRef.current.length > 0 && isMountedRef.current) {
+                    // 将缓冲区的消息添加到消息列表的前面
+                    setMessages(prev => [...messageBufferRef.current.reverse(), ...prev]);
+                    messageBufferRef.current = []; // 清空缓冲区
+                }
+            }, 100);
+        };
+
+        // 设置消息监听器
+        client.onRecviveMesage(handleNewMessage);
+
+        // 组件卸载时的清理
+        return () => {
+            isMountedRef.current = false;
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+            }
+        };
+    }, [isSearching]); // 依赖isSearching以确保搜索模式变化时正确处理
 
     // 使用 useCallback 包装 loadMoreMessages 以避免重复创建
     const handleLoadMore = useCallback(() => {
