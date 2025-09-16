@@ -19,6 +19,7 @@ const StyleChip = React.memo((props: { label: string, style: ChipStyle }) => {
             borderColor: props.style.color,
             mr: 1,
             minWidth: 40,
+            height: 22,
         }}
     />
 })
@@ -49,10 +50,19 @@ const MessageCard: React.FC<MessageCardProps> = React.memo(({
                 <Box display={'flex'} flexDirection={'row'} justifyContent={'space-between'} alignItems={'end'}>
                     <Box display={'flex'} flexDirection={'column'}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography color='text.secondary' variant="body2" sx={{ mr: 2 }}>process id: </Typography>
+                            <Typography color='text.secondary' variant="body2" sx={{ mr: 2 }}>{msg.msg.process_id}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography color='text.secondary' variant="body2" sx={{ mr: 2 }}>thread id: </Typography>
+                            <Typography color='text.secondary' variant="body2" sx={{ mr: 2 }}>{msg.msg.thread_id}</Typography>
+                        </Box>
+                    </Box>
+                    <Box display={'flex'} flexDirection={'column'}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Typography color='text.secondary' variant="body2" sx={{ mr: 2 }}>id: </Typography>
                             <Typography color='text.secondary' variant="body2" sx={{ mr: 2 }}>{msg.msg.id}</Typography>
                         </Box>
-
                         <Typography color='text.secondary' variant="body2" sx={{ mr: 2 }}>{msg.time}</Typography>
                     </Box>
                     <Box display={'flex'} flexDirection={'column'}>
@@ -65,7 +75,7 @@ const MessageCard: React.FC<MessageCardProps> = React.memo(({
                     </Box>
                 </Box>
             </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', mb: 1 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-end', mb: 1 }}>
                 <Tooltip title={msg.msg.level.toString()} placement='top'>
                     <StyleChip label={msg.msg.level.toString()} style={msg.levelStyle(level_rules_sets)} />
                 </Tooltip>
