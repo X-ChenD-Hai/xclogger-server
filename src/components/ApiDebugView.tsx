@@ -28,7 +28,7 @@ const ApiDebugView = () => {
             }}>
                 getmessage
             </Button>
-            <Button onClick={() => client.start_server("").then(async () => setStateMsg(JSON.stringify(await client.get_server_state())))}>
+            <Button onClick={() => client.start_server().then(async () => setStateMsg(JSON.stringify(await client.get_server_state())))}>
                 start server
             </Button>
             <Button onClick={() => client.stop_server().then(async () => setStateMsg(JSON.stringify(await client.get_server_state())))}>
