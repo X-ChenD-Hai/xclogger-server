@@ -55,12 +55,12 @@ export interface FilterConfig {
 export interface IClient {
     set(key: string, value: string): void;
     get(key: string): Promise<string | null>;
-    get_messages(limit: number, offset: number): Promise<Array<Message>>;
+    get_messages(limit: number, offset: number,desc: boolean): Promise<Array<Message>>;
     get_messages_count(): Promise<number>;
     onRecviveMesage(callback: (msg: Message) => void): void;
     start_server(addr: string): void;
     stop_server(): void;
-    filter_messages(config: FilterConfig, oeder: MessageField, limit: number, offset: number): Promise<Array<Message>>;
+    filter_messages(config: FilterConfig, oeder: MessageField, limit: number, offset: number,desc: boolean): Promise<Array<Message>>;
     filter_messages_count(config: FilterConfig): Promise<number>;
     get_distinct(field: MessageField): Promise<Array<string>>;
 }

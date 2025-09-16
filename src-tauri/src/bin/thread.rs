@@ -22,7 +22,7 @@ async fn get_messages(
     if !handler.db.is_connected() {
         handler.connect_db(&app_handle)?;
     }
-    handler.db.get_messages(limit, offset)
+    handler.db.get_messages(limit, offset, false)
 }
 
 #[tauri::command]

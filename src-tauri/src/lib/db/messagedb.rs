@@ -65,7 +65,7 @@ pub enum MessageField {
 
 pub trait MessageDB {
     fn insert_message(&self, message: &MessageData) -> Result<usize, String>;
-    fn get_messages(&self, limit: i32, offset: i32) -> Result<String, String>;
+    fn get_messages(&self, limit: i32, offset: i32, desc: bool) -> Result<String, String>;
     fn get_message_count(&self) -> Result<i32, String>;
     fn filter_messages(
         &self,
@@ -73,6 +73,7 @@ pub trait MessageDB {
         order_by: &MessageField,
         limit: &i32,
         offset: &i32,
+        desc: bool,
     ) -> Result<String, String>;
     fn filter_messages_count(&self, config: &FilterConfig) -> Result<i32, String>;
     fn get_distinct(&self, field: &MessageField) -> Result<String, String>;
@@ -255,18 +256,21 @@ impl MessageDB for Arc<Mutex<Option<Connection>>> {
         )
         .map_err(|e| format!("插入消息失败: {}", e))
     }
-
-    fn get_messages(&self, limit: i32, offset: i32) -> Result<String, String> {
+    fn get_messages(&self, limit: i32, offset: i32, desc: bool) -> Result<String, String> {
         let conn_guard = self.lock().map_err(|e| e.to_string())?;
         let conn = conn_guard.as_ref().ok_or("数据库未连接".to_string())?;
-        println!("select with: lim:{}, off:{}", limit, offset);
+        println!("select with: lim:{}, off:{}, desc:{}", limit, offset, desc);
+
+        let order_clause = if desc { "DESC" } else { "ASC" };
+
         let mut stmt = conn
-            .prepare(
+            .prepare(&format!(
                 "SELECT id, role, label, file, function, time, process_id, thread_id, line, level, messages 
                  FROM log_messages 
-                 ORDER BY id DESC 
+                 ORDER BY id {}
                  LIMIT ?1 OFFSET ?2",
-            )
+                order_clause
+            ))
             .map_err(|e| e.to_string())?;
 
         let messages_iter = stmt
@@ -277,7 +281,7 @@ impl MessageDB for Arc<Mutex<Option<Connection>>> {
                     label: row.get(2)?,
                     file: row.get(3)?,
                     function: row.get(4)?,
-                    time: row.get::<_, i64>(5)? as usize, // i64 转 usize
+                    time: row.get::<_, i64>(5)? as usize,
                     process_id: row.get::<_, i64>(6)? as usize,
                     thread_id: row.get::<_, i64>(7)? as usize,
                     line: row.get(8)?,
@@ -287,11 +291,9 @@ impl MessageDB for Arc<Mutex<Option<Connection>>> {
             })
             .map_err(|e| e.to_string())?;
 
-        // 收集结果并处理错误
         let messages: Result<Vec<_>, _> = messages_iter.collect();
         let messages = messages.map_err(|e| e.to_string())?;
         println!("success to get message {:?}", messages);
-        // 序列化为 JSON 返回给前端
         serde_json::to_string(&messages).map_err(|e| e.to_string())
     }
 
@@ -315,21 +317,22 @@ impl MessageDB for Arc<Mutex<Option<Connection>>> {
         order_by: &MessageField,
         limit: &i32,
         offset: &i32,
+        desc: bool,
     ) -> Result<String, String> {
         let conn_guard = self.lock().map_err(|e| e.to_string())?;
         let conn = conn_guard.as_ref().ok_or("数据库未连接".to_string())?;
 
-        // 获取条件语句和参数
         let (where_clause, mut params) = get_params(&config);
 
-        let mut query = format!(
-        "SELECT id, role, label, file, function, time, process_id, thread_id, line, level, messages 
-         FROM log_messages 
-         {}",
-        where_clause
-    );
+        let order_clause = if desc { "DESC" } else { "ASC" };
 
-        // 添加ORDER BY子句
+        let mut query = format!(
+            "SELECT id, role, label, file, function, time, process_id, thread_id, line, level, messages 
+             FROM log_messages 
+             {}",
+            where_clause
+        );
+
         query.push_str(" ORDER BY ");
         match order_by {
             MessageField::Id => query.push_str("id"),
@@ -343,9 +346,9 @@ impl MessageDB for Arc<Mutex<Option<Connection>>> {
             MessageField::Line => query.push_str("line"),
             MessageField::Level => query.push_str("level"),
         }
-        query.push_str(" DESC");
+        query.push_str(" ");
+        query.push_str(order_clause);
 
-        // 添加LIMIT和OFFSET
         query.push_str(" LIMIT ? OFFSET ?");
         params.push(Box::new(limit));
         params.push(Box::new(offset));
@@ -380,6 +383,7 @@ impl MessageDB for Arc<Mutex<Option<Connection>>> {
 
         serde_json::to_string(&messages).map_err(|e| e.to_string())
     }
+
     // 实现 filter_messages_count 函数
     fn filter_messages_count(&self, config: &FilterConfig) -> Result<i32, String> {
         let conn_guard = self.lock().map_err(|e| e.to_string())?;

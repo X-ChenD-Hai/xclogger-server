@@ -18,11 +18,12 @@ async fn get_messages(
     handler: State<'_, LogHandler>,
     limit: i32,
     offset: i32,
+    desc: bool,
 ) -> Result<String, String> {
     if !handler.db.is_connected() {
         handler.connect_db(&app_handle)?;
     }
-    handler.db.get_messages(limit, offset)
+    handler.db.get_messages(limit, offset, desc)
 }
 #[tauri::command]
 async fn get_message_count(app: AppHandle, handler: State<'_, LogHandler>) -> Result<i32, String> {
@@ -73,11 +74,12 @@ async fn filter_messages(
     order_by: MessageField,
     limit: i32,
     offset: i32,
+    desc: bool,
 ) -> Result<String, String> {
     handler.connect_db(&app)?;
     handler
         .db
-        .filter_messages(&config, &order_by, &limit, &offset)
+        .filter_messages(&config, &order_by, &limit, &offset, desc)
 }
 
 #[tauri::command]

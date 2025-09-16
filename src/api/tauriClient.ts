@@ -216,9 +216,9 @@ export class TauriClient implements IClient {
      * @param params 包含 limit 和 offset 的参数对象
      * @returns 返回 Message 数组的 Promise
      */
-    async get_messages(limit: number, offset: number): Promise<Message[]> {
+    async get_messages(limit: number, offset: number, desc: boolean): Promise<Message[]> {
         try {
-            const res = await invoke<string>(TauriCommands.GetMessages, { limit, offset } as GetMessagesRequest);
+            const res = await invoke<string>(TauriCommands.GetMessages, { limit, offset, desc } as GetMessagesRequest);
             console.log("get_messages result:", res);
             return JSON.parse(res) as Message[];
         } catch (error) {
@@ -275,14 +275,16 @@ export class TauriClient implements IClient {
         config: FilterConfig,
         order: MessageField,
         limit: number,
-        offset: number
+        offset: number,
+        desc: boolean
     ): Promise<Message[]> {
         try {
             const res = await invoke<string>(TauriCommands.FilterMessages, {
                 config,
                 orderBy: order,
                 limit,
-                offset
+                offset,
+                desc
             });
             return JSON.parse(res) as Message[];
         } catch (error) {

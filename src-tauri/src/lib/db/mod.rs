@@ -103,7 +103,7 @@ mod test {
         println!("{:?}", db.filter_messages_count(&config));
         println!(
             "{:?}",
-            db.filter_messages(&config, &order_by, &limit, &offset)
+            db.filter_messages(&config, &order_by, &limit, &offset, false)
         );
     }
     #[test]
@@ -120,6 +120,5 @@ mod test {
         println!("{:?}", process_ids);
         let thread_ids = db.get_distinct(&MessageField::ThreadId).unwrap();
         println!("{:?}", thread_ids);
-
     }
 }

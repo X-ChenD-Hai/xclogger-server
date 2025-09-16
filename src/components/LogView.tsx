@@ -38,9 +38,9 @@ const LogView = (props: LogViewProps) => {
             let newMessages: Message[];
 
             if (isSearching) {
-                newMessages = await client.filter_messages(searchConfig, searchOrderBy, pageSize, offset);
+                newMessages = await client.filter_messages(searchConfig, searchOrderBy, pageSize, offset, false);
             } else {
-                newMessages = await client.get_messages(pageSize, offset);
+                newMessages = await client.get_messages(pageSize, offset, false);
             }
 
             if (newMessages.length < pageSize) {
@@ -65,7 +65,7 @@ const LogView = (props: LogViewProps) => {
             setIsSearching(true);
             setCurrentPage(0);
 
-            const filteredMessages = await client.filter_messages(config, orderBy, pageSize, 0);
+            const filteredMessages = await client.filter_messages(config, orderBy, pageSize, 0, false);
             setMessages(filteredMessages);
             setHasMore(filteredMessages.length === pageSize);
             setCurrentPage(1);
@@ -85,7 +85,7 @@ const LogView = (props: LogViewProps) => {
             setSearchOrderBy(MessageField.time);
             setCurrentPage(0);
 
-            const initialMessages = await client.get_messages(pageSize, 0);
+            const initialMessages = await client.get_messages(pageSize, 0, false);
             setMessages(initialMessages);
             setHasMore(initialMessages.length === pageSize);
             setCurrentPage(1);
@@ -102,7 +102,7 @@ const LogView = (props: LogViewProps) => {
         const fetchInitialMessages = async () => {
             try {
                 setLoading(true);
-                const initialMessages = await client.get_messages(pageSize, 0);
+                const initialMessages = await client.get_messages(pageSize, 0, false);
                 setMessages(initialMessages);
                 setCurrentPage(1);
                 setHasMore(initialMessages.length === pageSize);
