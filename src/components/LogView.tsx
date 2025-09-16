@@ -26,6 +26,7 @@ const LogView = (props: LogViewProps) => {
     const [isSearching, setIsSearching] = useState(false);
     const [searchConfig, setSearchConfig] = useState<FilterConfig>({});
     const [searchOrderBy, setSearchOrderBy] = useState<MessageField>(MessageField.time);
+    const [searchDesc, setSearchDesc] = useState<boolean>(false);
     const pageSize = 20; // 每页加载数量
 
     // 加载更多消息的函数
@@ -38,9 +39,9 @@ const LogView = (props: LogViewProps) => {
             let newMessages: Message[];
 
             if (isSearching) {
-                newMessages = await client.filter_messages(searchConfig, searchOrderBy, pageSize, offset, false);
+                newMessages = await client.filter_messages(searchConfig, searchOrderBy, pageSize, offset, searchDesc);
             } else {
-                newMessages = await client.get_messages(pageSize, offset, false);
+                newMessages = await client.get_messages(pageSize, offset, searchDesc);
             }
 
             if (newMessages.length < pageSize) {
@@ -54,18 +55,19 @@ const LogView = (props: LogViewProps) => {
         } finally {
             setLoading(false);
         }
-    }, [currentPage, hasMore, loading, pageSize, isSearching, searchConfig, searchOrderBy]);
+    }, [currentPage, hasMore, loading, pageSize, isSearching, searchConfig, searchOrderBy, searchDesc]);
 
     // 处理搜索
-    const handleSearch = useCallback(async (config: FilterConfig, orderBy: MessageField) => {
+    const handleSearch = useCallback(async (config: FilterConfig, orderBy: MessageField, desc: boolean) => {
         setLoading(true);
         try {
             setSearchConfig(config);
             setSearchOrderBy(orderBy);
+            setSearchDesc(desc);
             setIsSearching(true);
             setCurrentPage(0);
 
-            const filteredMessages = await client.filter_messages(config, orderBy, pageSize, 0, false);
+            const filteredMessages = await client.filter_messages(config, orderBy, pageSize, 0, desc);
             setMessages(filteredMessages);
             setHasMore(filteredMessages.length === pageSize);
             setCurrentPage(1);
@@ -83,6 +85,7 @@ const LogView = (props: LogViewProps) => {
             setIsSearching(false);
             setSearchConfig({});
             setSearchOrderBy(MessageField.time);
+            setSearchDesc(false);
             setCurrentPage(0);
 
             const initialMessages = await client.get_messages(pageSize, 0, false);
@@ -102,7 +105,7 @@ const LogView = (props: LogViewProps) => {
         const fetchInitialMessages = async () => {
             try {
                 setLoading(true);
-                const initialMessages = await client.get_messages(pageSize, 0, false);
+                const initialMessages = await client.get_messages(pageSize, 0, searchDesc);
                 setMessages(initialMessages);
                 setCurrentPage(1);
                 setHasMore(initialMessages.length === pageSize);
@@ -114,7 +117,7 @@ const LogView = (props: LogViewProps) => {
         };
 
         fetchInitialMessages();
-    }, []); // 空依赖数组确保只在组件挂载时执行一次
+    }, [searchDesc]); // 依赖searchDesc以确保排序方向变化时重新加载
 
     // 使用 useCallback 包装 loadMoreMessages 以避免重复创建
     const handleLoadMore = useCallback(() => {

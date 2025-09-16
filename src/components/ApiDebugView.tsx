@@ -18,7 +18,7 @@ const ApiDebugView = () => {
     return (
         <Box>
             <Button size='small' onClick={() => {
-                client.get_messages(10, 0).then((v) => {
+                client.get_messages(10, 0, false).then((v) => {
                     setStateMsg(JSON.stringify(v))
 
                 }).catch(e => {

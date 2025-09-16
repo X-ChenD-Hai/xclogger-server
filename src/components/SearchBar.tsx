@@ -18,13 +18,15 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   Search as SearchIcon,
-  Clear as ClearIcon
+  Clear as ClearIcon,
+  ArrowDownward as ArrowDownwardIcon,
+  ArrowUpward as ArrowUpwardIcon
 } from '@mui/icons-material';
 import { FilterConfig, MessageField, PatternMode } from '../api/client';
 import client from '../api/tauriClient';
 
 interface SearchBarProps {
-  onSearch: (config: FilterConfig, orderBy: MessageField) => void;
+  onSearch: (config: FilterConfig, orderBy: MessageField, desc: boolean) => void;
   onReset: () => void;
 }
 
@@ -32,28 +34,29 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onReset }) => {
   const [expanded, setExpanded] = useState(false);
   const [filterConfig, setFilterConfig] = useState<FilterConfig>({});
   const [orderBy, setOrderBy] = useState<MessageField>(MessageField.time);
-  
+  const [desc, setDesc] = useState<boolean>(false);
+
   // State for distinct values
   const [labelOptions, setLabelOptions] = useState<string[]>([]);
   const [roleOptions, setRoleOptions] = useState<string[]>([]);
   const [fileOptions, setFileOptions] = useState<string[]>([]);
   const [functionOptions, setFunctionOptions] = useState<string[]>([]);
   const [messagesOptions, setMessagesOptions] = useState<string[]>([]);
-  
+
   // State for loading
   const [loadingLabel, setLoadingLabel] = useState(false);
   const [loadingRole, setLoadingRole] = useState(false);
   const [loadingFile, setLoadingFile] = useState(false);
   const [loadingFunction, setLoadingFunction] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
-  
+
   // Load distinct values when expanded
   useEffect(() => {
     if (expanded) {
       loadDistinctValues();
     }
   }, [expanded]);
-  
+
   const loadDistinctValues = async () => {
     // Load label options
     setLoadingLabel(true);
@@ -65,7 +68,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onReset }) => {
     } finally {
       setLoadingLabel(false);
     }
-    
+
     // Load role options
     setLoadingRole(true);
     try {
@@ -76,7 +79,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onReset }) => {
     } finally {
       setLoadingRole(false);
     }
-    
+
     // Load file options
     setLoadingFile(true);
     try {
@@ -87,7 +90,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onReset }) => {
     } finally {
       setLoadingFile(false);
     }
-    
+
     // Load function options
     setLoadingFunction(true);
     try {
@@ -98,7 +101,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onReset }) => {
     } finally {
       setLoadingFunction(false);
     }
-    
+
     // Load messages options
     setLoadingMessages(true);
     try {
@@ -135,7 +138,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onReset }) => {
   };
 
   const handleSearch = () => {
-    onSearch(filterConfig, orderBy);
+    onSearch(filterConfig, orderBy, desc);
   };
 
   const handleReset = () => {
@@ -147,7 +150,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onReset }) => {
   const hasActiveFilters = Object.keys(filterConfig).length > 0;
 
   return (
-    <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
+    <Paper elevation={2} sx={{ p: 1, mb: 2, position: 'sticky', top: 0, zIndex: 1000 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: expanded ? 2 : 0 }}>
         <Typography variant="h6" component="h2">
           搜索过滤器
@@ -159,147 +162,142 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onReset }) => {
 
       <Collapse in={expanded}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {/* String pattern filters */}
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          {/* String pattern filters - Compact layout */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 1 }}>
             {/* Label filter */}
-            <Box sx={{ minWidth: 200 }}>
-              <Autocomplete
-                freeSolo
-                options={labelOptions}
-                value={(filterConfig.label as any)?.value || ''}
-                onChange={(_, newValue) => handleStringPatternChange('label', PatternMode.Contain, newValue || '')}
-                onInputChange={(_, newInputValue) => handleStringPatternChange('label', PatternMode.Contain, newInputValue)}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="标签"
-                    InputProps={{
-                      ...params.InputProps,
-                      endAdornment: (
-                        <>
-                          {loadingLabel ? <CircularProgress color="inherit" size={20} /> : null}
-                          {params.InputProps.endAdornment}
-                        </>
-                      ),
-                    }}
-                  />
-                )}
-                loading={loadingLabel}
-                fullWidth
-              />
-            </Box>
+            <Autocomplete
+              freeSolo
+              size="small"
+              options={labelOptions}
+              value={(filterConfig.label as any)?.value || ''}
+              onChange={(_, newValue) => handleStringPatternChange('label', PatternMode.Contain, newValue || '')}
+              onInputChange={(_, newInputValue) => handleStringPatternChange('label', PatternMode.Contain, newInputValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="标签"
+                  size="small"
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {loadingLabel ? <CircularProgress color="inherit" size={16} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
+              loading={loadingLabel}
+            />
 
             {/* Role filter */}
-            <Box sx={{ minWidth: 200 }}>
-              <Autocomplete
-                freeSolo
-                options={roleOptions}
-                value={(filterConfig.role as any)?.value || ''}
-                onChange={(_, newValue) => handleStringPatternChange('role', PatternMode.Contain, newValue || '')}
-                onInputChange={(_, newInputValue) => handleStringPatternChange('role', PatternMode.Contain, newInputValue)}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="角色"
-                    InputProps={{
-                      ...params.InputProps,
-                      endAdornment: (
-                        <>
-                          {loadingRole ? <CircularProgress color="inherit" size={20} /> : null}
-                          {params.InputProps.endAdornment}
-                        </>
-                      ),
-                    }}
-                  />
-                )}
-                loading={loadingRole}
-                fullWidth
-              />
-            </Box>
+            <Autocomplete
+              freeSolo
+              size="small"
+              options={roleOptions}
+              value={(filterConfig.role as any)?.value || ''}
+              onChange={(_, newValue) => handleStringPatternChange('role', PatternMode.Contain, newValue || '')}
+              onInputChange={(_, newInputValue) => handleStringPatternChange('role', PatternMode.Contain, newInputValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="角色"
+                  size="small"
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {loadingRole ? <CircularProgress color="inherit" size={16} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
+              loading={loadingRole}
+            />
 
             {/* File filter */}
-            <Box sx={{ minWidth: 200 }}>
-              <Autocomplete
-                freeSolo
-                options={fileOptions}
-                value={(filterConfig.file as any)?.value || ''}
-                onChange={(_, newValue) => handleStringPatternChange('file', PatternMode.Contain, newValue || '')}
-                onInputChange={(_, newInputValue) => handleStringPatternChange('file', PatternMode.Contain, newInputValue)}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="文件"
-                    InputProps={{
-                      ...params.InputProps,
-                      endAdornment: (
-                        <>
-                          {loadingFile ? <CircularProgress color="inherit" size={20} /> : null}
-                          {params.InputProps.endAdornment}
-                        </>
-                      ),
-                    }}
-                  />
-                )}
-                loading={loadingFile}
-                fullWidth
-              />
-            </Box>
+            <Autocomplete
+              freeSolo
+              size="small"
+              options={fileOptions}
+              value={(filterConfig.file as any)?.value || ''}
+              onChange={(_, newValue) => handleStringPatternChange('file', PatternMode.Contain, newValue || '')}
+              onInputChange={(_, newInputValue) => handleStringPatternChange('file', PatternMode.Contain, newInputValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="文件"
+                  size="small"
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {loadingFile ? <CircularProgress color="inherit" size={16} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
+              loading={loadingFile}
+            />
 
             {/* Function filter */}
-            <Box sx={{ minWidth: 200 }}>
-              <Autocomplete
-                freeSolo
-                options={functionOptions}
-                value={(filterConfig.function as any)?.value || ''}
-                onChange={(_, newValue) => handleStringPatternChange('function', PatternMode.Contain, newValue || '')}
-                onInputChange={(_, newInputValue) => handleStringPatternChange('function', PatternMode.Contain, newInputValue)}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="函数"
-                    InputProps={{
-                      ...params.InputProps,
-                      endAdornment: (
-                        <>
-                          {loadingFunction ? <CircularProgress color="inherit" size={20} /> : null}
-                          {params.InputProps.endAdornment}
-                        </>
-                      ),
-                    }}
-                  />
-                )}
-                loading={loadingFunction}
-                fullWidth
-              />
-            </Box>
+            <Autocomplete
+              freeSolo
+              size="small"
+              options={functionOptions}
+              value={(filterConfig.function as any)?.value || ''}
+              onChange={(_, newValue) => handleStringPatternChange('function', PatternMode.Contain, newValue || '')}
+              onInputChange={(_, newInputValue) => handleStringPatternChange('function', PatternMode.Contain, newInputValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="函数"
+                  size="small"
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {loadingFunction ? <CircularProgress color="inherit" size={16} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
+              loading={loadingFunction}
+            />
 
             {/* Messages filter */}
-            <Box sx={{ minWidth: 200 }}>
-              <Autocomplete
-                freeSolo
-                options={messagesOptions}
-                value={(filterConfig.messages as any)?.value || ''}
-                onChange={(_, newValue) => handleStringPatternChange('messages', PatternMode.Contain, newValue || '')}
-                onInputChange={(_, newInputValue) => handleStringPatternChange('messages', PatternMode.Contain, newInputValue)}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="消息内容"
-                    InputProps={{
-                      ...params.InputProps,
-                      endAdornment: (
-                        <>
-                          {loadingMessages ? <CircularProgress color="inherit" size={20} /> : null}
-                          {params.InputProps.endAdornment}
-                        </>
-                      ),
-                    }}
-                  />
-                )}
-                loading={loadingMessages}
-                fullWidth
-              />
-            </Box>
+            <Autocomplete
+              freeSolo
+              size="small"
+              options={messagesOptions}
+              value={(filterConfig.messages as any)?.value || ''}
+              onChange={(_, newValue) => handleStringPatternChange('messages', PatternMode.Contain, newValue || '')}
+              onInputChange={(_, newInputValue) => handleStringPatternChange('messages', PatternMode.Contain, newInputValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="消息内容"
+                  size="small"
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {loadingMessages ? <CircularProgress color="inherit" size={16} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
+              loading={loadingMessages}
+            />
           </Box>
 
           {/* Number range filters */}
@@ -389,27 +387,41 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onReset }) => {
             </Box>
           </Box>
 
-          {/* Order by selection */}
-          <Box sx={{ minWidth: 200 }}>
-            <FormControl fullWidth>
-              <InputLabel>排序方式</InputLabel>
-              <Select
-                value={orderBy}
-                label="排序方式"
-                onChange={(e) => setOrderBy(e.target.value as MessageField)}
+          {/* Order by selection and sort direction */}
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Box sx={{ minWidth: 200 }}>
+              <FormControl fullWidth>
+                <InputLabel>排序方式</InputLabel>
+                <Select
+                  value={orderBy}
+                  label="排序方式"
+                  onChange={(e) => setOrderBy(e.target.value as MessageField)}
+                >
+                  <MenuItem value={MessageField.Id}>ID</MenuItem>
+                  <MenuItem value={MessageField.Role}>角色</MenuItem>
+                  <MenuItem value={MessageField.Label}>标签</MenuItem>
+                  <MenuItem value={MessageField.file}>文件</MenuItem>
+                  <MenuItem value={MessageField.function}>函数</MenuItem>
+                  <MenuItem value={MessageField.time}>时间</MenuItem>
+                  <MenuItem value={MessageField.process_id}>进程ID</MenuItem>
+                  <MenuItem value={MessageField.thread_id}>线程ID</MenuItem>
+                  <MenuItem value={MessageField.line}>行号</MenuItem>
+                  <MenuItem value={MessageField.level}>日志级别</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+
+            {/* Sort direction toggle */}
+            <Box>
+              <Button
+                variant={desc ? "contained" : "outlined"}
+                onClick={() => setDesc(!desc)}
+                startIcon={desc ? <ArrowDownwardIcon /> : <ArrowUpwardIcon />}
+                sx={{ minWidth: 'auto' }}
               >
-                <MenuItem value={MessageField.Id}>ID</MenuItem>
-                <MenuItem value={MessageField.Role}>角色</MenuItem>
-                <MenuItem value={MessageField.Label}>标签</MenuItem>
-                <MenuItem value={MessageField.file}>文件</MenuItem>
-                <MenuItem value={MessageField.function}>函数</MenuItem>
-                <MenuItem value={MessageField.time}>时间</MenuItem>
-                <MenuItem value={MessageField.process_id}>进程ID</MenuItem>
-                <MenuItem value={MessageField.thread_id}>线程ID</MenuItem>
-                <MenuItem value={MessageField.line}>行号</MenuItem>
-                <MenuItem value={MessageField.level}>日志级别</MenuItem>
-              </Select>
-            </FormControl>
+                {desc ? '降序' : '升序'}
+              </Button>
+            </Box>
           </Box>
 
           {/* Action buttons */}
